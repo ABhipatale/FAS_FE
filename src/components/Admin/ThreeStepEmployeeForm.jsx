@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FaUser, FaClock, FaKey, FaCheck, FaTimes, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 
-const ThreeStepEmployeeForm = ({ onClose }) => {
+const FourStepEmployeeForm = ({ onClose }) => {
   const [step, setStep] = useState(1);
   const [shifts, setShifts] = useState([]);
+  const [createdUserId, setCreatedUserId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -83,6 +84,7 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
         return false;
       }
     }
+    // Step 4 (face registration) doesn't need validation
     return true;
   };
 
@@ -122,8 +124,8 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
       const data = await response.json();
 
       if (data.success) {
-        alert('Employee created successfully!');
-        onClose();
+        setCreatedUserId(data.data.id); // Save the created user ID
+        setStep(4); // Move to face registration step
       } else {
         setError(data.message || 'Failed to create employee');
       }
@@ -137,7 +139,7 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
   const renderStepIndicator = () => {
     return (
       <div className="flex justify-center mb-8">
-        {[1, 2, 3].map((num) => (
+        {[1, 2, 3, 4].map((num) => (
           <div key={num} className="flex items-center">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
               step === num 
@@ -148,7 +150,7 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
             }`}>
               {num < step ? <FaCheck /> : num}
             </div>
-            {num < 3 && (
+            {num < 4 && (
               <div className={`w-16 h-1 ${
                 num < step ? 'bg-green-500' : 'bg-gray-300'
               }`}></div>
@@ -329,7 +331,7 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-800 flex items-center">
-              <FaKey className="mr-2" /> Credentials & Face Registration
+              <FaKey className="mr-2" /> Credentials
             </h2>
             <div className="space-y-4">
               <div>
@@ -345,13 +347,58 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
                   placeholder="Enter password (minimum 6 characters)"
                 />
               </div>
-              
-              <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
-                <h3 className="font-medium text-blue-800 mb-2">Next Steps:</h3>
-                <p className="text-sm text-blue-700">
-                  After creating the employee, you will be able to register their face for attendance.
-                  The employee will receive credentials to log in to the system.
-                </p>
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center">
+              <FaUser className="mr-2" /> Face Registration
+            </h2>
+            <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+              <div className="text-center">
+                <div className="mb-4">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FaUser className="text-4xl text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-800">Ready to Register Face</h3>
+                  <p className="text-gray-600 mt-2">
+                    Employee created successfully! Now you can register their face for attendance tracking.
+                  </p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-md shadow-sm">
+                  <h4 className="font-medium text-gray-800 mb-2">Employee Details:</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="font-medium">Name:</span> {formData.name}</div>
+                    <div><span className="font-medium">Email:</span> {formData.email}</div>
+                    <div><span className="font-medium">Position:</span> {formData.position || 'N/A'}</div>
+                    <div><span className="font-medium">Shift:</span> {shifts.find(s => s.id == formData.shift_id)?.shift_name || 'N/A'}</div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-center space-x-4">
+                  <button
+                    onClick={() => {
+                      // Navigate to face registration page
+                      window.location.href = `/face-registration?userId=${createdUserId}&userName=${encodeURIComponent(formData.name)}`;
+                    }}
+                    className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
+                  >
+                    <FaUser className="mr-2" /> Register Face Now
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      alert('Employee created successfully! You can register their face later from the employee management page.');
+                      onClose();
+                    }}
+                    className="px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                  >
+                    Skip for Now
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -389,7 +436,7 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
             <FaArrowLeft className="mr-2" /> Previous
           </button>
           
-          {step < 3 ? (
+          {step < 4 ? (
             <button
               type="button"
               onClick={nextStep}
@@ -404,14 +451,7 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
                 onClick={onClose}
                 className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center"
               >
-                <FaTimes className="mr-2" /> Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : 'Create Employee'}
+                <FaTimes className="mr-2" /> Close
               </button>
             </div>
           )}
@@ -421,4 +461,4 @@ const ThreeStepEmployeeForm = ({ onClose }) => {
   );
 };
 
-export default ThreeStepEmployeeForm;
+export default FourStepEmployeeForm;

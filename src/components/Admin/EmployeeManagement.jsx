@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaEye, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
-import ThreeStepEmployeeForm from './ThreeStepEmployeeForm';
+import FourStepEmployeeForm from './ThreeStepEmployeeForm';
 
 const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
@@ -191,7 +191,7 @@ const EmployeeManagement = () => {
               </button>
             </div>
 
-            <ThreeStepEmployeeForm 
+            <FourStepEmployeeForm
               onClose={() => {
                 setShowAddModal(false);
                 fetchEmployees(); // Refresh the list after adding

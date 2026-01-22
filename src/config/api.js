@@ -31,6 +31,10 @@ const API_CONFIG = {
     // Punch operations
     PUNCH_IN: '/punch/in',
     PUNCH_OUT: '/punch/out',
+    
+    // Dashboard
+    DASHBOARD_STATS: '/dashboard/stats',
+    ATTENDANCE_RAW: '/attendance/raw',
   }
 };
 
