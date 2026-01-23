@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaEye, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
-import FourStepEmployeeForm from './ThreeStepEmployeeForm';
+import FourStepEmployeeForm from './FourStepEmployeeForm';
+import { apiCall } from '../../config/api';
+import API_CONFIG from '../../config/api';
 
 const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
@@ -16,18 +18,15 @@ const EmployeeManagement = () => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch(`${window.BASE_URL}/api/users`, {
+      const response = await apiCall(API_CONFIG.ENDPOINTS.USERS, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch employees');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setEmployees(data.data);
       } else {
@@ -46,7 +45,7 @@ const EmployeeManagement = () => {
     }
 
     try {
-      const response = await fetch(`${window.BASE_URL}/api/users/${employeeId}`, {
+      const response = await apiCall(`${API_CONFIG.ENDPOINTS.USERS}/${employeeId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -54,7 +53,7 @@ const EmployeeManagement = () => {
         }
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         fetchEmployees();

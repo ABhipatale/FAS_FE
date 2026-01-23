@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { FaUser, FaClock, FaKey, FaCheck, FaTimes, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
+import FaceRegistrationModal from '../Face/FaceRegistrationModal';
+import { apiCall } from '../../config/api';
+import API_CONFIG from '../../config/api';
 
 const FourStepEmployeeForm = ({ onClose }) => {
   const [step, setStep] = useState(1);
   const [shifts, setShifts] = useState([]);
   const [createdUserId, setCreatedUserId] = useState(null);
+  const [showFaceRegistrationModal, setShowFaceRegistrationModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -27,20 +31,19 @@ const FourStepEmployeeForm = ({ onClose }) => {
 
   const fetchShifts = async () => {
     try {
-      const response = await fetch(`${window.BASE_URL}/api/shifts`, {
+      const response = await apiCall(API_CONFIG.ENDPOINTS.SHIFTS, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch shifts');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setShifts(data.data);
+      } else {
+        throw new Error(data.message || 'Failed to fetch shifts');
       }
     } catch (err) {
       setError(err.message);
@@ -109,7 +112,7 @@ const FourStepEmployeeForm = ({ onClose }) => {
     setError(null);
 
     try {
-      const response = await fetch(`${window.BASE_URL}/api/users`, {
+      const response = await apiCall(API_CONFIG.ENDPOINTS.USERS, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -117,11 +120,11 @@ const FourStepEmployeeForm = ({ onClose }) => {
         },
         body: JSON.stringify({
           ...formData,
-          role: 'user' // Default to user role
+          role: 'employee' // Changed from 'user' to 'employee' for consistency
         })
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         setCreatedUserId(data.data.id); // Save the created user ID
@@ -380,10 +383,7 @@ const FourStepEmployeeForm = ({ onClose }) => {
                 
                 <div className="mt-6 flex justify-center space-x-4">
                   <button
-                    onClick={() => {
-                      // Navigate to face registration page
-                      window.location.href = `/face-registration?userId=${createdUserId}&userName=${encodeURIComponent(formData.name)}`;
-                    }}
+                    onClick={() => setShowFaceRegistrationModal(true)}
                     className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
                   >
                     <FaUser className="mr-2" /> Register Face Now
@@ -457,6 +457,19 @@ const FourStepEmployeeForm = ({ onClose }) => {
           )}
         </div>
       </form>
+
+      {/* Face Registration Modal */}
+      {showFaceRegistrationModal && createdUserId && (
+        <FaceRegistrationModal
+          userId={createdUserId}
+          userName={formData.name}
+          onClose={() => setShowFaceRegistrationModal(false)}
+          onRegistrationComplete={() => {
+            alert('Face registered successfully!');
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 };

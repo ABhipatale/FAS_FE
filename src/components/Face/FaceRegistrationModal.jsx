@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import * as faceapi from 'face-api.js';
-import API_CONFIG, { apiCall } from '../../config/api';
+import { apiCall } from '../../config/api';
+import API_CONFIG from '../../config/api';
 
 const FaceRegistrationModal = ({ userId, userName, onClose, onRegistrationComplete }) => {
   const videoRef = useRef(null);
@@ -107,7 +108,7 @@ await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
           const faceDescriptor = detections[0].descriptor;
           
           // Send face descriptor to backend
-          const { response, data } = await apiCall(API_CONFIG.ENDPOINTS.FACE_DESCRIPTOR, {
+          const response = await apiCall(API_CONFIG.ENDPOINTS.FACE_DESCRIPTOR, {
             method: 'POST',
             body: JSON.stringify({
               user_id: userId, // Pass the user ID for this specific user
@@ -115,7 +116,9 @@ await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
             })
           });
           
-          if (response.ok && data.success) {
+          const data = response.data;
+          
+          if (response.response.ok && data.success) {
             setMessage(data.message || 'Face descriptor saved successfully!');
             setTimeout(() => {
               onRegistrationComplete();
