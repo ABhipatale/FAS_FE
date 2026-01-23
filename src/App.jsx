@@ -11,7 +11,7 @@ import Logout from "./components/Auth/Logout";
 import Dashboard from "./components/Dashboard/EnhancedDashboard";
 import Navbar from "./components/Layout/Navbar";
 import Sidebar from "./components/Layout/Sidebar";
-import FaceRegistration from "./components/Face/FaceRegistration";
+import FaceRegistration from "./components/Face/FaceRegistrationModal";
 import { useState } from 'react';
 import EmployeeAttendanceDetail from './components/Dashboard/EmployeeAttendanceDetail';
 import ShiftManagement from './components/Admin/ShiftManagement';
