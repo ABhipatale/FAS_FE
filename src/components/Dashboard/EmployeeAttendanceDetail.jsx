@@ -266,6 +266,8 @@
 // };
 
 // export default EmployeeAttendanceDetail;
+
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiCall } from '../../config/api';
@@ -290,18 +292,25 @@ const EmployeeAttendanceDetail = () => {
 
   const fetchEmployeeData = async () => {
     try {
-      const response = await apiCall(`/users/${userId}`);
-      setEmployee(response.data);
-      
-      const attendanceResponse = await apiCall(`/attendance/user/${userId}`, 'GET', null, {
-        month: selectedMonth,
-        year: selectedYear
-      });
-      
-      if (attendanceResponse.success) {
-        setAttendanceData(attendanceResponse.data);
+      const userResponse = await apiCall(`/users/${userId}`);
+      if (userResponse.data.success) {
+        setEmployee(userResponse.data.data);
       } else {
-        console.error('Error fetching attendance data:', attendanceResponse.message);
+        setEmployee(userResponse.data.data || {});
+      }
+      
+      const attendanceResponse = await apiCall(`/attendance/user/${userId}?month=${selectedMonth}&year=${selectedYear}`);
+      
+      if (attendanceResponse.data.success) {
+        setAttendanceData(attendanceResponse.data.data);
+      } else {
+        console.error('Error fetching attendance data:', attendanceResponse.data.message);
+        // Set empty data if there's an error
+        setAttendanceData({
+          monthly: [],
+          weekly: [],
+          yearly: []
+        });
       }
     } catch (error) {
       console.error('Error fetching employee data:', error);
@@ -324,7 +333,7 @@ const EmployeeAttendanceDetail = () => {
     const days = [];
     
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="aspect-square"></div>);
+      days.push(<div key={`empty-${i}`} className="cal-empty"></div>);
     }
     
     for (let day = 1; day <= daysInMonth; day++) {
@@ -334,28 +343,28 @@ const EmployeeAttendanceDetail = () => {
       const date = new Date(selectedYear, selectedMonth - 1, day);
       const dayOfWeek = date.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isToday = dateString === new Date().toISOString().split('T')[0];
       
-      let statusClass = 'bg-gray-200';
+      let statusClass = '';
       
       if (isWeekend) {
-        statusClass = 'bg-gray-400';
+        statusClass = 'weekend';
       } else if (attendanceRecord) {
-        if (attendanceRecord.status === 'present') statusClass = 'bg-green-500';
-        else if (attendanceRecord.status === 'absent') statusClass = 'bg-red-500';
-        else if (attendanceRecord.status === 'late') statusClass = 'bg-yellow-500';
-        else if (attendanceRecord.status === 'leave') statusClass = 'bg-blue-500';
+        statusClass = attendanceRecord.status;
       }
 
       days.push(
-        <div key={day} className="aspect-square p-0.5">
-          <div className={`h-full rounded ${statusClass} flex items-center justify-center text-[8px] font-medium text-white`}>
-            {day}
-          </div>
+        <div 
+          key={day} 
+          className={`cal-day ${statusClass} ${isToday ? 'today' : ''}`}
+          title={attendanceRecord ? `${attendanceRecord.status.toUpperCase()} - ${attendanceRecord.punch_in_time || 'N/A'}` : 'No record'}
+        >
+          {day}
         </div>
       );
     }
 
-    return <div className="grid grid-cols-7 gap-0.5">{days}</div>;
+    return <div className="cal-grid">{days}</div>;
   };
 
   const getAttendanceStats = () => {
@@ -363,239 +372,912 @@ const EmployeeAttendanceDetail = () => {
     const absentCount = attendanceData.monthly.filter(record => record.status === 'absent').length;
     const lateCount = attendanceData.monthly.filter(record => record.status === 'late').length;
     const leaveCount = attendanceData.monthly.filter(record => record.status === 'leave').length;
+    const totalDays = presentCount + absentCount + lateCount + leaveCount;
+    const attendanceRate = totalDays > 0 ? ((presentCount + lateCount) / totalDays * 100).toFixed(1) : 0;
 
-    return { presentCount, absentCount, lateCount, leaveCount };
+    return { presentCount, absentCount, lateCount, leaveCount, attendanceRate, totalDays };
   };
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent mx-auto"></div>
-          <p className="mt-2 text-xs text-gray-600">Loading...</p>
+      <div className="loading-screen">
+        <style>{`
+          .loading-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          }
+          .loader {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+          .loading-text {
+            color: white;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          }
+        `}</style>
+        <div style={{ textAlign: 'center' }}>
+          <div className="loader"></div>
+          <p className="loading-text">Loading attendance data...</p>
         </div>
       </div>
     );
   }
 
   const stats = getAttendanceStats();
+  const monthName = new Date(selectedYear, selectedMonth - 1).toLocaleString('default', { month: 'long' });
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-indigo-50 to-purple-50 p-2 sm:p-4">
-      <div className="h-full max-w-7xl mx-auto flex flex-col">
-        
-        {/* Header - Ultra Compact */}
-        <div className="flex-shrink-0 mb-2">
-          <div className="flex items-center justify-between mb-2">
-            <button 
-              onClick={() => navigate(-1)}
-              className="px-2 py-1 bg-white rounded-lg hover:bg-gray-100 text-xs flex items-center gap-1 shadow-sm"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </button>
-            
-            <div className="flex items-center gap-2">
-              <select 
-                value={selectedMonth} 
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-indigo-500"
-              >
-                {[...Array(12)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {new Date(0, i).toLocaleString('default', { month: 'short' })}
-                  </option>
-                ))}
-              </select>
-              
-              <select 
-                value={selectedYear} 
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-indigo-500"
-              >
-                {[2024, 2025, 2026, 2027].map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-              
-              <button 
-                onClick={fetchEmployeeData}
-                className="px-2 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700"
-              >
-                ↻
-              </button>
-            </div>
-          </div>
+    <div className="attendance-page">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        .attendance-page {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          font-family: 'DM Sans', sans-serif;
+          padding: 2rem;
+        }
+
+        .container {
+          max-width: 1400px;
+          margin: 0 auto;
+          animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Header */
+        .page-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 2rem;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .back-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 12px;
+          color: white;
+          font-weight: 600;
+          font-size: 0.95rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: translateX(-5px);
+        }
+
+        .controls {
+          display: flex;
+          gap: 0.75rem;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .select-control {
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.95);
+          border: none;
+          border-radius: 12px;
+          font-weight: 600;
+          font-size: 0.95rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .select-control:hover {
+          background: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .refresh-btn {
+          width: 45px;
+          height: 45px;
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 12px;
+          color: white;
+          font-size: 1.25rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .refresh-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: rotate(180deg);
+        }
+
+        /* Employee Card */
+        .employee-card {
+          background: white;
+          border-radius: 24px;
+          padding: 2rem;
+          margin-bottom: 2rem;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+          animation: slideUp 0.6s ease-out 0.1s both;
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .employee-info {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+
+        .avatar {
+          width: 80px;
+          height: 80px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 2rem;
+          font-weight: 800;
+          font-family: 'Poppins', sans-serif;
+          box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+          flex-shrink: 0;
+        }
+
+        .info-text h1 {
+          font-family: 'Poppins', sans-serif;
+          font-size: 1.875rem;
+          font-weight: 700;
+          color: #1a202c;
+          margin-bottom: 0.25rem;
+        }
+
+        .info-meta {
+          display: flex;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+          font-size: 0.95rem;
+          color: #718096;
+        }
+
+        .meta-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .meta-label {
+          font-weight: 600;
+          color: #4a5568;
+        }
+
+        /* Main Grid */
+        .main-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 2rem;
+          margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+          .main-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        /* Stats Cards */
+        .stats-section {
+          animation: slideUp 0.6s ease-out 0.2s both;
+        }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+          background: white;
+          border-radius: 20px;
+          padding: 1.5rem;
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .stat-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: var(--accent-color);
+        }
+
+        .stat-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card.present {
+          --accent-color: #10b981;
+        }
+
+        .stat-card.absent {
+          --accent-color: #ef4444;
+        }
+
+        .stat-card.late {
+          --accent-color: #f59e0b;
+        }
+
+        .stat-card.leave {
+          --accent-color: #3b82f6;
+        }
+
+        .stat-header {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .stat-icon {
+          width: 40px;
+          height: 40px;
+          background: var(--accent-color);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 1.25rem;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-label {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+          font-family: 'Poppins', sans-serif;
+          font-size: 2.25rem;
+          font-weight: 800;
+          color: #1a202c;
+          line-height: 1;
+        }
+
+        /* Attendance Rate Card */
+        .rate-card {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 20px;
+          padding: 2rem;
+          text-align: center;
+          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .rate-card::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          right: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+          animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          50% { transform: translate(-20px, -20px) rotate(180deg); }
+        }
+
+        .rate-percentage {
+          font-family: 'Poppins', sans-serif;
+          font-size: 3.5rem;
+          font-weight: 800;
+          color: white;
+          margin-bottom: 0.5rem;
+          position: relative;
+          z-index: 1;
+        }
+
+        .rate-label {
+          font-size: 1rem;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.9);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          position: relative;
+          z-index: 1;
+        }
+
+        .rate-info {
+          margin-top: 1rem;
+          font-size: 0.875rem;
+          color: rgba(255, 255, 255, 0.8);
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Calendar Section */
+        .calendar-section {
+          animation: slideUp 0.6s ease-out 0.3s both;
+        }
+
+        .calendar-card {
+          background: white;
+          border-radius: 20px;
+          padding: 1.5rem;
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-header {
+          margin-bottom: 1.5rem;
+        }
+
+        .calendar-title {
+          font-family: 'Poppins', sans-serif;
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #1a202c;
+          margin-bottom: 1rem;
+        }
+
+        .legend {
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #64748b;
+        }
+
+        .legend-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 3px;
+        }
+
+        .legend-dot.present { background: #10b981; }
+        .legend-dot.absent { background: #ef4444; }
+        .legend-dot.late { background: #f59e0b; }
+        .legend-dot.leave { background: #3b82f6; }
+        .legend-dot.weekend { background: #cbd5e1; }
+
+        .cal-weekdays {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .cal-weekday {
+          text-align: center;
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: #64748b;
+          padding: 0.5rem;
+        }
+
+        .cal-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 0.5rem;
+        }
+
+        .cal-day {
+          aspect-ratio: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          font-size: 0.95rem;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          background: #f8fafc;
+          color: #1a202c;
+          border: 2px solid transparent;
+        }
+
+        .cal-day:hover {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          z-index: 10;
+        }
+
+        .cal-empty {
+          aspect-ratio: 1;
+        }
+
+        .cal-day.today {
+          border: 2px solid #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+          font-weight: 800;
+        }
+
+        .cal-day.weekend {
+          background: #f1f5f9;
+          color: #94a3b8;
+        }
+
+        .cal-day.present {
+          background: #d1fae5;
+          color: #065f46;
+          border-color: #10b981;
+        }
+
+        .cal-day.absent {
+          background: #fee2e2;
+          color: #991b1b;
+          border-color: #ef4444;
+        }
+
+        .cal-day.late {
+          background: #fef3c7;
+          color: #92400e;
+          border-color: #f59e0b;
+        }
+
+        .cal-day.leave {
+          background: #dbeafe;
+          color: #1e40af;
+          border-color: #3b82f6;
+        }
+
+        /* Records Table */
+        .records-section {
+          grid-column: 1 / -1;
+          animation: slideUp 0.6s ease-out 0.4s both;
+        }
+
+        .records-card {
+          background: white;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .records-header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 1.5rem 2rem;
+        }
+
+        .records-title {
+          font-family: 'Poppins', sans-serif;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: white;
+        }
+
+        .records-subtitle {
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 0.95rem;
+          margin-top: 0.25rem;
+        }
+
+        .table-container {
+          overflow-x: auto;
+          max-height: 600px;
+          overflow-y: auto;
+        }
+
+        .records-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .records-table thead {
+          position: sticky;
+          top: 0;
+          background: #f8fafc;
+          z-index: 10;
+        }
+
+        .records-table th {
+          padding: 1.25rem 1.5rem;
+          text-align: left;
+          font-weight: 700;
+          font-size: 0.875rem;
+          color: #475569;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border-bottom: 2px solid #e2e8f0;
+        }
+
+        .records-table td {
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid #f1f5f9;
+          font-size: 0.95rem;
+        }
+
+        .records-table tbody tr {
+          transition: all 0.2s ease;
+        }
+
+        .records-table tbody tr:hover {
+          background: #f8fafc;
+        }
+
+        .date-cell {
+          font-weight: 700;
+          color: #1a202c;
+        }
+
+        .day-cell {
+          color: #64748b;
+        }
+
+        .status-badge {
+          display: inline-block;
+          padding: 0.4rem 0.875rem;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 0.8125rem;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+
+        .status-badge.present {
+          background: #d1fae5;
+          color: #065f46;
+        }
+
+        .status-badge.absent {
+          background: #fee2e2;
+          color: #991b1b;
+        }
+
+        .status-badge.late {
+          background: #fef3c7;
+          color: #92400e;
+        }
+
+        .status-badge.leave {
+          background: #dbeafe;
+          color: #1e40af;
+        }
+
+        .time-cell {
+          font-weight: 600;
+          color: #475569;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .hours-cell {
+          font-weight: 700;
+          color: #1a202c;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .no-records {
+          text-align: center;
+          padding: 4rem 2rem;
+          color: #94a3b8;
+          font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .attendance-page {
+            padding: 1rem;
+          }
+
+          .employee-info {
+            flex-direction: column;
+            text-align: center;
+          }
+
+          .info-text h1 {
+            font-size: 1.5rem;
+          }
+
+          .info-meta {
+            justify-content: center;
+          }
+
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .cal-day {
+            font-size: 0.875rem;
+          }
+
+          .records-table th,
+          .records-table td {
+            padding: 1rem;
+            font-size: 0.875rem;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .cal-grid {
+            gap: 0.25rem;
+          }
+
+          .cal-weekdays {
+            gap: 0.25rem;
+          }
+
+          .cal-day {
+            font-size: 0.8125rem;
+            border-radius: 6px;
+          }
+        }
+      `}</style>
+
+      <div className="container">
+        {/* Header */}
+        <div className="page-header">
+          <button onClick={() => navigate(-1)} className="back-btn">
+            <span>←</span>
+            Back
+          </button>
           
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-2 shadow">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
-                <span className="text-sm font-bold text-white">
-                  {employee?.name?.charAt(0).toUpperCase() || 'E'}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-sm font-bold text-white truncate">{employee?.name}</h1>
-                <p className="text-[10px] text-indigo-100">ID: {employee?.id}</p>
+          <div className="controls">
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="select-control"
+            >
+              {[...Array(12)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {new Date(0, i).toLocaleString('default', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+            
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="select-control"
+            >
+              {[2023, 2024, 2025, 2026, 2027].map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            
+            <button onClick={fetchEmployeeData} className="refresh-btn">
+              ↻
+            </button>
+          </div>
+        </div>
+
+        {/* Employee Card */}
+        <div className="employee-card">
+          <div className="employee-info">
+            <div className="avatar">
+              {employee?.name?.charAt(0).toUpperCase() || 'E'}
+            </div>
+            <div className="info-text">
+              <h1>{employee?.name || 'Employee Name'}</h1>
+              <div className="info-meta">
+                <div className="meta-item">
+                  <span className="meta-label">ID:</span>
+                  <span>{employee?.id || 'N/A'}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Department:</span>
+                  <span>{employee?.department || 'N/A'}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Period:</span>
+                  <span>{monthName} {selectedYear}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content Area - Flexible */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-3">
-          
-          {/* Left Column - Stats & Calendar */}
-          <div className="lg:col-span-1 space-y-2 overflow-auto">
-            
-            {/* Stats - Ultra Compact */}
-            <div className="grid grid-cols-2 gap-1.5">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-2 shadow">
-                <div className="flex items-center gap-1 mb-1">
-                  <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="text-[9px] text-white/80">Present</span>
+        {/* Main Grid */}
+        <div className="main-grid">
+          {/* Stats Section */}
+          <div className="stats-section">
+            <div className="stats-grid">
+              <div className="stat-card present">
+                <div className="stat-header">
+                  <div className="stat-icon">✓</div>
+                  <div className="stat-label">Present</div>
                 </div>
-                <p className="text-xl font-bold text-white">{stats.presentCount}</p>
+                <div className="stat-value">{stats.presentCount}</div>
               </div>
 
-              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-2 shadow">
-                <div className="flex items-center gap-1 mb-1">
-                  <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="text-[9px] text-white/80">Absent</span>
+              <div className="stat-card absent">
+                <div className="stat-header">
+                  <div className="stat-icon">✕</div>
+                  <div className="stat-label">Absent</div>
                 </div>
-                <p className="text-xl font-bold text-white">{stats.absentCount}</p>
+                <div className="stat-value">{stats.absentCount}</div>
               </div>
 
-              <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-2 shadow">
-                <div className="flex items-center gap-1 mb-1">
-                  <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="text-[9px] text-white/80">Late</span>
+              <div className="stat-card late">
+                <div className="stat-header">
+                  <div className="stat-icon">⏰</div>
+                  <div className="stat-label">Late</div>
                 </div>
-                <p className="text-xl font-bold text-white">{stats.lateCount}</p>
+                <div className="stat-value">{stats.lateCount}</div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-2 shadow">
-                <div className="flex items-center gap-1 mb-1">
-                  <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="text-[9px] text-white/80">Leave</span>
+              <div className="stat-card leave">
+                <div className="stat-header">
+                  <div className="stat-icon">📋</div>
+                  <div className="stat-label">Leave</div>
                 </div>
-                <p className="text-xl font-bold text-white">{stats.leaveCount}</p>
+                <div className="stat-value">{stats.leaveCount}</div>
               </div>
             </div>
 
-            {/* Calendar - 5cm x 5cm (approx 190px) */}
-            <div className="bg-white rounded-lg shadow p-2">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-[10px] font-bold text-gray-700">Calendar</h3>
-              </div>
-              
-              {/* Legend */}
-              <div className="flex gap-1 mb-1.5 text-[8px] flex-wrap">
-                <div className="flex items-center gap-0.5">
-                  <div className="w-2 h-2 bg-green-500 rounded-sm"></div>
-                  <span>P</span>
-                </div>
-                <div className="flex items-center gap-0.5">
-                  <div className="w-2 h-2 bg-red-500 rounded-sm"></div>
-                  <span>A</span>
-                </div>
-                <div className="flex items-center gap-0.5">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-sm"></div>
-                  <span>L</span>
-                </div>
-                <div className="flex items-center gap-0.5">
-                  <div className="w-2 h-2 bg-blue-500 rounded-sm"></div>
-                  <span>LV</span>
-                </div>
-              </div>
-
-              {/* Day headers */}
-              <div className="grid grid-cols-7 gap-0.5 mb-0.5">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                  <div key={index} className="text-center text-[8px] font-bold text-gray-600 py-0.5">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Calendar Grid - Fixed size ~5cm */}
-              <div className="w-[190px] h-[190px]">
-                {renderCalendarView()}
-              </div>
+            {/* Attendance Rate */}
+            <div className="rate-card">
+              <div className="rate-percentage">{stats.attendanceRate}%</div>
+              <div className="rate-label">Attendance Rate</div>
+              <div className="rate-info">Based on {stats.totalDays} working days</div>
             </div>
           </div>
 
-          {/* Right Column - Table */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow overflow-hidden flex flex-col min-h-0">
-            <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600 px-2 py-1.5">
-              <h2 className="text-xs font-bold text-white">Attendance Records</h2>
+          {/* Calendar Section */}
+          <div className="calendar-section">
+            <div className="calendar-card">
+              <div className="calendar-header">
+                <h2 className="calendar-title">{monthName} {selectedYear}</h2>
+                <div className="legend">
+                  <div className="legend-item">
+                    <div className="legend-dot present"></div>
+                    <span>Present</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-dot absent"></div>
+                    <span>Absent</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-dot late"></div>
+                    <span>Late</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-dot leave"></div>
+                    <span>Leave</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-dot weekend"></div>
+                    <span>Weekend</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="cal-weekdays">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <div key={day} className="cal-weekday">{day}</div>
+                ))}
+              </div>
+
+              {renderCalendarView()}
             </div>
-            <div className="flex-1 overflow-auto">
-              <table className="w-full text-[10px]">
-                <thead className="bg-gray-50 sticky top-0">
+          </div>
+        </div>
+
+        {/* Records Table */}
+        <div className="records-section">
+          <div className="records-card">
+            <div className="records-header">
+              <h2 className="records-title">Attendance Records</h2>
+              <p className="records-subtitle">Complete monthly attendance details</p>
+            </div>
+            
+            <div className="table-container">
+              <table className="records-table">
+                <thead>
                   <tr>
-                    <th className="px-2 py-1 text-left font-bold text-gray-700">Date</th>
-                    <th className="px-2 py-1 text-left font-bold text-gray-700 hidden sm:table-cell">Day</th>
-                    <th className="px-2 py-1 text-left font-bold text-gray-700">Status</th>
-                    <th className="px-2 py-1 text-left font-bold text-gray-700">In</th>
-                    <th className="px-2 py-1 text-left font-bold text-gray-700">Out</th>
-                    <th className="px-2 py-1 text-left font-bold text-gray-700 hidden md:table-cell">Hours</th>
+                    <th>Date</th>
+                    <th>Day</th>
+                    <th>Status</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Hours</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {attendanceData.monthly.map((record, index) => {
-                    const date = new Date(record.date);
-                    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                    
-                    return (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-2 py-1 font-medium text-gray-900">
-                          {record.date.slice(5)}
-                        </td>
-                        <td className="px-2 py-1 text-gray-600 hidden sm:table-cell">
-                          {dayNames[date.getDay()]}
-                        </td>
-                        <td className="px-2 py-1">
-                          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${
-                            record.status === 'present' ? 'bg-green-500 text-white' :
-                            record.status === 'absent' ? 'bg-red-500 text-white' :
-                            record.status === 'late' ? 'bg-yellow-500 text-white' :
-                            'bg-blue-500 text-white'
-                          }`}>
-                            {record.status[0].toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-2 py-1 text-gray-900">
-                          {record.punch_in_time?.slice(0, 5) || '-'}
-                        </td>
-                        <td className="px-2 py-1 text-gray-900">
-                          {record.punch_out_time?.slice(0, 5) || '-'}
-                        </td>
-                        <td className="px-2 py-1 font-medium text-gray-900 hidden md:table-cell">
-                          {record.hours_worked || '-'}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                <tbody>
+                  {attendanceData.monthly.length > 0 ? (
+                    attendanceData.monthly.map((record, index) => {
+                      const date = new Date(record.date);
+                      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                      
+                      return (
+                        <tr key={index}>
+                          <td className="date-cell">
+                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+                          <td className="day-cell">{dayNames[date.getDay()]}</td>
+                          <td>
+                            <span className={`status-badge ${record.status}`}>
+                              {record.status}
+                            </span>
+                          </td>
+                          <td className="time-cell">
+                            {record.punch_in_time || '—'}
+                          </td>
+                          <td className="time-cell">
+                            {record.punch_out_time || '—'}
+                          </td>
+                          <td className="hours-cell">
+                            {record.hours_worked || '—'}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="no-records">
+                        No attendance records found for this period.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
