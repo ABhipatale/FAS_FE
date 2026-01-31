@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ShiftManagement = () => {
+  const { company } = useAuth();
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,11 +19,17 @@ const ShiftManagement = () => {
   // Load shifts from API
   useEffect(() => {
     fetchShifts();
-  }, []);
+  }, [company]);
 
   const fetchShifts = async () => {
+    if (!company) {
+      setError('No company assigned to current user');
+      setLoading(false);
+      return;
+    }
+    
     try {
-      const response = await fetch(`${window.BASE_URL}/api/shifts`, {
+      const response = await fetch(`${window.BASE_URL}/api/shifts?company_id=${company.id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
           'Content-Type': 'application/json'
@@ -85,13 +93,19 @@ const ShiftManagement = () => {
       
       const method = editingShift ? 'PUT' : 'POST';
       
+      // Include company_id in the request
+      const requestData = {
+        ...formData,
+        company_id: company?.id
+      };
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(requestData)
       });
 
       const data = await response.json();
