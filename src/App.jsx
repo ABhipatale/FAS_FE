@@ -16,6 +16,7 @@ import { useState } from 'react';
 import EmployeeAttendanceDetail from './components/Dashboard/EmployeeAttendanceDetail';
 import ShiftManagement from './components/Admin/ShiftManagement';
 import EmployeeManagement from './components/Admin/EmployeeManagement';
+import CompanyRegister from './components/Auth/CompanyRegister';
 
 // Custom protected route that checks user role
 const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -72,7 +73,7 @@ const AppWrapper = ({ children }) => {
   
   return (
     <div className="flex">
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <Sidebar user={user} isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       <div className="flex-1 lg:ml-64">
         <Navbar />
         <main className="p-4">
@@ -103,6 +104,16 @@ function App() {
             <AppWrapper>
               <Register />
             </AppWrapper>
+          } />
+          
+          <Route path="/company-register" element={
+            <ProtectedRoute>
+              <RoleProtectedRoute allowedRoles={['superadmin']}>
+                <AppWrapper>
+                  <CompanyRegister />
+                </AppWrapper>
+              </RoleProtectedRoute>
+            </ProtectedRoute>
           } />
           
           {/* Protected routes */}

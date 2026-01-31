@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaBars, FaTimes, FaTachometerAlt, FaUsers, FaCog, FaCalendarAlt, FaUser, FaSignOutAlt } from 'react-icons/fa';
+import { FaBars, FaTimes, FaTachometerAlt, FaUsers, FaCog, FaCalendarAlt, FaUser, FaSignOutAlt, FaBuilding } from 'react-icons/fa';
 
 const Sidebar = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +30,7 @@ const Sidebar = ({ user }) => {
       ];
     }
 
-    return [
+    const baseItems = [
       {
         name: 'Dashboard',
         icon: <FaTachometerAlt />,
@@ -50,18 +50,35 @@ const Sidebar = ({ user }) => {
         name: 'Face Attendance',
         icon: <FaCalendarAlt />,
         path: '/face-attendance'
-      },
-      {
-        name: 'Settings',
-        icon: <FaCog />,
-        path: '/settings'
-      },
-      {
-        name: 'Profile',
-        icon: <FaUser />,
-        path: '/profile'
       }
     ];
+
+    // Add company management for super admins only
+    if (user?.role === 'superadmin') {
+      baseItems.splice(1, 0, {
+        name: 'Company Management',
+        icon: <FaBuilding />,
+        path: '/company-register'
+      });
+    }
+
+    // Add settings and profile for non-employees
+    if (user?.role !== 'employee') {
+      baseItems.push(
+        {
+          name: 'Settings',
+          icon: <FaCog />,
+          path: '/settings'
+        },
+        {
+          name: 'Profile',
+          icon: <FaUser />,
+          path: '/profile'
+        }
+      );
+    }
+
+    return baseItems;
   };
 
   const menuItems = getMenuItems();
