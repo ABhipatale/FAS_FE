@@ -24,13 +24,13 @@
 //   const fetchDashboardData = async () => {
 //     try {
 //       setLoading(true);
-      
+
 //       // Fetch real stats from backend
 //       const statsResponse = await apiCall(API_CONFIG.ENDPOINTS.DASHBOARD_STATS);
 //       if (statsResponse.data.success) {
 //         setStats(statsResponse.data.data.stats);
 //       }
-      
+
 //       // Fetch real attendance data from backend
 //       const rawAttendanceResponse = await apiCall(`${API_CONFIG.ENDPOINTS.ATTENDANCE_RAW}?filter=${filter}`);
 //       if (rawAttendanceResponse.data.success) {
@@ -83,25 +83,25 @@
 //     <div className="min-h-screen bg-gray-50">
 //       <div className="container mx-auto px-4 py-8">
 //         <h1 className="text-3xl font-bold text-gray-800 mb-8">Dashboard</h1>
-        
+
 //         {/* Stats Cards */}
 //         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 //           <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
 //             <h3 className="text-lg font-semibold text-gray-600 mb-2">Total Employees</h3>
 //             <p className="text-3xl font-bold text-gray-800">{stats.totalEmployees}</p>
 //           </div>
-          
+
 //           <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
 //             <h3 className="text-lg font-semibold text-gray-600 mb-2">Today Present</h3>
 //             <p className="text-3xl font-bold text-gray-800">{stats.todayPresent}</p>
 //           </div>
-          
+
 //           <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
 //             <h3 className="text-lg font-semibold text-gray-600 mb-2">Today Absent</h3>
 //             <p className="text-3xl font-bold text-gray-800">{stats.todayAbsent}</p>
 //           </div>
 //         </div>
-        
+
 //         {/* Attendance Chart */}
 //         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
 //           <h2 className="text-xl font-semibold text-gray-800 mb-4">Attendance Tracker</h2>
@@ -109,7 +109,7 @@
 //             <p className="text-gray-500">Attendance chart visualization would go here</p>
 //           </div>
 //         </div>
-        
+
 //         {/* Filter Buttons */}
 //         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
 //           <div className="flex flex-wrap gap-2">
@@ -166,7 +166,7 @@
 //             </div>
 //           </div>
 //         </div>
-        
+
 //         {/* Attendance Table */}
 //         <div className="bg-white rounded-lg shadow-md overflow-hidden">
 //           <div className="overflow-x-auto">
@@ -287,8 +287,8 @@ export default function EnhancedDashboard() {
           shift: record.user && record.user.shift ? record.user.shift.shift_name : 'N/A',
           shiftStartTime: record.user && record.user.shift ? record.user.shift.punch_in_time : 'N/A',
           faceRegistered: record.user ? (record.user.face_descriptor && record.user.face_descriptor.length > 0) : false,
-          punchIn: record.punch_in_time ? new Date(record.punch_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : null,
-          punchOut: record.punch_out_time ? new Date(record.punch_out_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : null,
+          punchIn: record.punch_in_time ? new Date(record.punch_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
+          punchOut: record.punch_out_time ? new Date(record.punch_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
           status: record.status || 'absent'
         }));
         setAttendanceData(transformedData);
@@ -299,6 +299,26 @@ export default function EnhancedDashboard() {
       setLoading(false);
     }
   };
+  
+  // For last updating time
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  // When data loads/filters change
+  useEffect(() => {
+    setLastUpdated(new Date());
+  }, [attendanceData, filter]);
+
+
+  // For Actual clock
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handleDateFilter = () => {
     if (dateRange.start && dateRange.end) {
@@ -385,73 +405,65 @@ export default function EnhancedDashboard() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.3 }}
         className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40"
+        style={{ fontFamily: 'Arial, sans-serif' }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Attendance Dashboard</h1>
-              <p className="text-gray-600 text-sm mt-1">Welcome {user?.name || 'Admin'}</p>
+              <h1 className="text-lg font-bold text-gray-900">Attendance Dashboard</h1>
+              <p className="text-gray-900 text-xs">Welcome {user?.name || 'Admin'}!</p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg">
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </span>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2 smooth-transition"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export Report
-              </motion.button>
+            <div className="flex flex-col items-end">
+              <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-xs text-gray-600">
+                  {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                <span className="text-xs font-bold text-gray-900">
+                  {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </motion.div>
 
-
-
-
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 py-6">
-
-
-
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 mb-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-5 py-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
           {/* Total Employees Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            whileHover={{ y: -2 }}
-            className="glass-effect rounded-xl p-5 hover-lift"
+            transition={{ duration: 0.3, delay: 0.1 }}
+            whileHover={{ y: -1 }}
+            className="glass-effect rounded-lg p-4 hover-lift"
+            style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <div className="flex items-start justify-between mb-2">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 uppercase tracking-wider mb-1">Total Employees</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Total Employees</p>
                 <motion.p
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="text-2xl text-gray-900"
+                  className="text-xl font-bold text-gray-900 mt-1"
                 >
                   {stats.totalEmployees}
                 </motion.p>
               </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
             </div>
-            <div className="pt-4 border-t border-gray-100">
-              <span className="inline-flex items-center text-sm text-gray-500">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+            <div className="pt-3 border-t border-gray-100 mt-2">
+              <span className="inline-flex items-center text-xs text-gray-500">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5"></span>
                 All active employees
               </span>
             </div>
@@ -461,31 +473,32 @@ export default function EnhancedDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            whileHover={{ y: -2 }}
-            className="glass-effect rounded-xl p-5 hover-lift"
+            transition={{ duration: 0.3, delay: 0.2 }}
+            whileHover={{ y: -1 }}
+            className="glass-effect rounded-lg p-4 hover-lift"
+            style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 uppercase tracking-wider mb-1">Present Today</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Present Today</p>
                 <motion.p
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="text-2xl text-emerald-600"
+                  className="text-xl font-bold text-emerald-600 mt-1"
                 >
                   {stats.todayPresent}
                 </motion.p>
               </div>
-              <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
-            <div className="pt-4 border-t border-gray-100">
-              <span className="inline-flex items-center text-sm text-emerald-600 font-medium">
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <div className="pt-3 border-t border-gray-100 mt-2">
+              <span className="inline-flex items-center text-xs font-semibold text-emerald-600">
+                <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 {stats.totalEmployees > 0 ? ((stats.todayPresent / stats.totalEmployees) * 100).toFixed(1) : 0}% of total
@@ -497,31 +510,32 @@ export default function EnhancedDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            whileHover={{ y: -2 }}
-            className="glass-effect rounded-xl p-5 hover-lift"
+            transition={{ duration: 0.3, delay: 0.3 }}
+            whileHover={{ y: -1 }}
+            className="glass-effect rounded-lg p-4 hover-lift"
+            style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 uppercase tracking-wider mb-1">Absent Today</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">On Leave Today</p>
                 <motion.p
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-2xl text-rose-600"
+                  className="text-xl font-bold text-rose-600 mt-1"
                 >
                   {stats.todayAbsent}
                 </motion.p>
               </div>
-              <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="w-10 h-10 bg-rose-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
-            <div className="pt-4 border-t border-gray-100">
-              <span className="inline-flex items-center text-sm text-gray-500">
-                <span className="w-2 h-2 bg-rose-500 rounded-full mr-2"></span>
+            <div className="pt-3 border-t border-gray-100 mt-2">
+              <span className="inline-flex items-center text-xs text-gray-500">
+                <span className="w-1.5 h-1.5 bg-rose-500 rounded-full mr-1.5"></span>
                 Requires attention
               </span>
             </div>
@@ -531,48 +545,49 @@ export default function EnhancedDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
-            whileHover={{ y: -2 }}
-            className="glass-effect rounded-xl p-5 hover-lift"
+            transition={{ duration: 0.3, delay: 0.4 }}
+            whileHover={{ y: -1 }}
+            className="glass-effect rounded-lg p-4 hover-lift"
+            style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 uppercase tracking-wider mb-1">Attendance Rate</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Attendance Rate</p>
                 <motion.p
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.6 }}
-                  className="text-2xl text-blue-600"
+                  className="text-xl font-bold text-blue-600 mt-1"
                 >
                   {attendanceRate}%
                 </motion.p>
               </div>
-              <div className="relative">
-                <svg className="w-12 h-12" viewBox="0 0 36 36">
+              <div className="relative flex-shrink-0">
+                <svg className="w-10 h-10" viewBox="0 0 36 36">
                   <path
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
                     stroke="#E5E7EB"
-                    strokeWidth="3"
+                    strokeWidth="2.5"
                   />
                   <motion.path
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
                     stroke="#3B82F6"
-                    strokeWidth="3"
-                    strokeLinecap="round"
+                    strokeWidth="2.5"
+                    strokeLinecap="square"
                     initial={{ strokeDasharray: '100, 100', strokeDashoffset: 100 }}
                     animate={{ strokeDashoffset: 100 - attendanceRate }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
                   />
                 </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-blue-600">
+                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-blue-600">
                   {attendanceRate}%
                 </span>
               </div>
             </div>
-            <div className="pt-4 border-t border-gray-100">
-              <span className="text-sm text-gray-500">Overall attendance performance</span>
+            <div className="pt-3 border-t border-gray-100 mt-2">
+              <span className="text-xs text-gray-500">Overall Performance</span>
             </div>
           </motion.div>
 
@@ -580,54 +595,51 @@ export default function EnhancedDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
-            whileHover={{ y: -2 }}
-            className="glass-effect rounded-xl p-4 hover-lift"
+            transition={{ duration: 0.3, delay: 0.5 }}
+            whileHover={{ y: -1 }}
+            className="glass-effect rounded-lg p-4 hover-lift"
+            style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-            <div className="space-y-3">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">Quick Actions</h3>
+            <div className="space-y-2">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-between p-2 bg-blue-50 hover:bg-blue-100 rounded-lg smooth-transition group"
+                className="w-full flex items-center justify-between p-2 bg-blue-100 hover:bg-blue-200 rounded-lg smooth-transition group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200">
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-blue-200 rounded flex items-center justify-center group-hover:bg-blue-300 flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">Add Employee</span>
+                  <span className="text-xs font-semibold text-gray-900 whitespace-nowrap">Add Employee</span>
                 </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg smooth-transition group"
+                className="w-full flex items-center justify-between p-2 bg-gray-50 hover:bg-gray-100 rounded-lg smooth-transition group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200">
-                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center group-hover:bg-gray-200 flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">Generate Reports</span>
+                  <span className="text-xs font-semibold text-gray-900 whitespace-nowrap">Generate Reports</span>
                 </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
               </motion.button>
             </div>
           </motion.div>
         </div>
-
-
-
-
 
         {/* Main Content Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -638,15 +650,17 @@ export default function EnhancedDashboard() {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="lg:col-span-2"
           >
-            <div className="glass-effect rounded-xl p-5 mb-6">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-semibold text-gray-900">Attendance Records</h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Filter by:</span>
+
+
+            <div className="glass-effect rounded-lg p-3 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold text-gray-900">Attendance Records</h2>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-semibold text-gray-700">Filter:</span>
                   <select
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
-                    className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="bg-white border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent min-w-[100px]"
                   >
                     <option value="today">Today</option>
                     <option value="yesterday">Yesterday</option>
@@ -657,16 +671,16 @@ export default function EnhancedDashboard() {
               </div>
 
               {/* Date Range Filter */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm font-medium text-gray-700 mb-3">Custom Date Range</p>
-                <div className="flex flex-col sm:flex-row gap-3">
+              <div className="mb-4 p-3 bg-gray-50 rounded">
+                <p className="text-sm font-bold text-gray-700 mb-2">Custom Date Range</p>
+                <div className="flex flex-col sm:flex-row gap-2">
                   <div className="flex-1">
                     <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
                     <input
                       type="date"
                       value={dateRange.start}
                       onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                      className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                   <div className="flex-1">
@@ -675,36 +689,38 @@ export default function EnhancedDashboard() {
                       type="date"
                       value={dateRange.end}
                       onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                      className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleDateFilter}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium self-end"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-semibold self-end"
                   >
-                    Apply Filter
+                    Apply
                   </motion.button>
                 </div>
               </div>
 
               {/* Search Bar */}
-              <div className="mb-4">
+              <div className="mb-3">
                 <div className="relative">
-                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
                     type="text"
                     placeholder="Search employees by name or email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full pl-8 pr-3 py-2 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
             </div>
+
+
 
             {/* Attendance Table */}
             <motion.div
@@ -832,70 +848,74 @@ export default function EnhancedDashboard() {
                 )}
               </div>
             </motion.div>
+
+
+
+            
           </motion.div>
 
           {/* Summary Sidebar */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="space-y-6"
+            transition={{ duration: 0.3, delay: 0.6 }}
+            className="space-y-4"
           >
             {/* Summary Card */}
-            <div className="glass-effect rounded-xl p-5">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Summary</h3>
-              <div className="space-y-4">
+            <div className="glass-effect rounded-lg p-3">
+              <h3 className="text-base font-bold text-gray-900 mb-3">Summary</h3>
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Total Records</span>
-                  <span className="text-sm font-medium text-gray-900">{attendanceData.length}</span>
+                  <span className="text-xs text-gray-600">Total Records</span>
+                  <span className="text-xs font-semibold text-gray-900">{attendanceData.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Showing</span>
-                  <span className="text-sm font-medium text-gray-900">{filteredData.length}</span>
+                  <span className="text-xs text-gray-600">Showing</span>
+                  <span className="text-xs font-semibold text-gray-900">{filteredData.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Filter Applied</span>
-                  <span className="text-sm font-medium text-gray-900 capitalize">{filter}</span>
+                  <span className="text-xs text-gray-600">Filter Applied</span>
+                  <span className="text-xs font-semibold text-gray-900 capitalize">{filter}</span>
                 </div>
               </div>
-              <div className="mt-6 pt-5 border-t border-gray-100">
+              <div className="mt-3 pt-3 border-t border-gray-100">
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-2">Data last updated</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  <p className="text-xs text-gray-600 mb-1">Data last updated</p>
+                  <p className="text-xs font-semibold text-gray-900">
+                    {lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Status Distribution Card */}
-            <div className="glass-effect rounded-xl p-5">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Status Distribution</h3>
-              <div className="space-y-3">
+            <div className="glass-effect rounded-lg p-3">
+              <h3 className="text-base font-bold text-gray-900 mb-3">Status Distribution</h3>
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-emerald-500 rounded-full"></span>
-                    <span className="text-sm text-gray-600">Present</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Present</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-xs font-semibold text-gray-900">
                     {attendanceData.filter(r => r.status === 'present').length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-rose-500 rounded-full"></span>
-                    <span className="text-sm text-gray-600">Absent</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Absent</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-xs font-semibold text-gray-900">
                     {attendanceData.filter(r => r.status === 'absent').length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-amber-500 rounded-full"></span>
-                    <span className="text-sm text-gray-600">Late</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Late</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-xs font-semibold text-gray-900">
                     {attendanceData.filter(r => r.status === 'late').length}
                   </span>
                 </div>
@@ -913,7 +933,7 @@ export default function EnhancedDashboard() {
         >
           <div className="flex items-center justify-between">
             <span>Showing {filteredData.length} of {attendanceData.length} records</span>
-            <span>Last updated: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+            <span>Last updated: {lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         </motion.div>
       </div>
