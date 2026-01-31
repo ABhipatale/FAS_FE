@@ -73,7 +73,7 @@ const AppWrapper = ({ children }) => {
   
   return (
     <div className="flex">
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <Sidebar user={user} isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       <div className="flex-1 lg:ml-64">
         <Navbar />
         <main className="p-4">
@@ -107,9 +107,13 @@ function App() {
           } />
           
           <Route path="/company-register" element={
-            <AppWrapper>
-              <CompanyRegister />
-            </AppWrapper>
+            <ProtectedRoute>
+              <RoleProtectedRoute allowedRoles={['superadmin']}>
+                <AppWrapper>
+                  <CompanyRegister />
+                </AppWrapper>
+              </RoleProtectedRoute>
+            </ProtectedRoute>
           } />
           
           {/* Protected routes */}

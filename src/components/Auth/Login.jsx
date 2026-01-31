@@ -117,12 +117,12 @@ export default function Login() {
               Register here
             </a>
           </p>
-          <p className="text-sm text-gray-600">
+          {/* <p className="text-sm text-gray-600">
             New company?{' '}
             <a href="/company-register" className="text-blue-600 hover:underline">
               Register your company
             </a>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>
