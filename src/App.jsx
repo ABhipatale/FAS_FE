@@ -84,26 +84,37 @@ const AppWrapper = ({ children }) => {
   );
 };
 
+// Public route that redirects to dashboard if authenticated
+const PublicRoute = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" />;
+  }
+  
+  return children;
+};
+
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public routes */}
+          {/* Public routes - only render if not authenticated */}
           <Route path="/login" element={
-            <AppWrapper>
+            <PublicRoute>
               <Login />
-            </AppWrapper>
+            </PublicRoute>
           } />
           <Route path="/employee-login" element={
-            <AppWrapper>
+            <PublicRoute>
               <EmployeeLogin />
-            </AppWrapper>
+            </PublicRoute>
           } />
           <Route path="/register" element={
-            <AppWrapper>
+            <PublicRoute>
               <Register />
-            </AppWrapper>
+            </PublicRoute>
           } />
           
           <Route path="/company-register" element={
