@@ -281,7 +281,7 @@ export default function EnhancedDashboard() {
       const rawAttendanceResponse = await apiCall(`${API_CONFIG.ENDPOINTS.ATTENDANCE_RAW}?filter=${filter}`);
       if (rawAttendanceResponse.data.success) {
         const transformedData = rawAttendanceResponse.data.data.map(record => ({
-          id: record.id,
+          id: record.user ? record.user.id : null,
           name: record.user ? record.user.name : 'Unknown User',
           email: record.user ? record.user.email : 'N/A',
           shift: record.user && record.user.shift ? record.user.shift.shift_name : 'N/A',
@@ -337,8 +337,10 @@ export default function EnhancedDashboard() {
   };
 
   const filteredData = attendanceData.filter(record =>
-    record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.email.toLowerCase().includes(searchTerm.toLowerCase())
+    record.id && ( // Only include records with valid user IDs
+      record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const attendanceRate = stats.totalEmployees > 0
