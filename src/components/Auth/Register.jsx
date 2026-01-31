@@ -152,11 +152,17 @@ export default function Register() {
           </button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 text-center space-y-2">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
             <a href="/login" className="text-blue-600 hover:underline">
               Login here
+            </a>
+          </p>
+          <p className="text-sm text-gray-600">
+            Want to register a company?{' '}
+            <a href="/company-register" className="text-blue-600 hover:underline">
+              Register company
             </a>
           </p>
         </div>

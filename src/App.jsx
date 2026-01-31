@@ -16,6 +16,7 @@ import { useState } from 'react';
 import EmployeeAttendanceDetail from './components/Dashboard/EmployeeAttendanceDetail';
 import ShiftManagement from './components/Admin/ShiftManagement';
 import EmployeeManagement from './components/Admin/EmployeeManagement';
+import CompanyRegister from './components/Auth/CompanyRegister';
 
 // Custom protected route that checks user role
 const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -102,6 +103,12 @@ function App() {
           <Route path="/register" element={
             <AppWrapper>
               <Register />
+            </AppWrapper>
+          } />
+          
+          <Route path="/company-register" element={
+            <AppWrapper>
+              <CompanyRegister />
             </AppWrapper>
           } />
           

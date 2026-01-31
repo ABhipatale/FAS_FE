@@ -283,6 +283,7 @@ export default function EnhancedDashboard() {
           name: record.user ? record.user.name : 'Unknown User',
           email: record.user ? record.user.email : 'N/A',
           shift: record.user && record.user.shift ? record.user.shift.shift_name : 'N/A',
+          shiftStartTime: record.user && record.user.shift ? record.user.shift.punch_in_time : 'N/A',
           faceRegistered: record.user ? (record.user.face_descriptor && record.user.face_descriptor.length > 0) : false,
           punchIn: record.punch_in_time ? new Date(record.punch_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : null,
           punchOut: record.punch_out_time ? new Date(record.punch_out_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : null,

@@ -18,6 +18,7 @@ const authReducer = (state, action) => {
         isAuthenticated: true,
         user: action.payload.user,
         token: action.payload.token,
+        company: action.payload.company || null,
         error: null,
       };
     case 'LOGIN_FAILURE':
@@ -27,6 +28,7 @@ const authReducer = (state, action) => {
         isAuthenticated: false,
         user: null,
         token: null,
+        company: null,
         error: action.payload,
       };
     case 'LOGOUT':
@@ -35,6 +37,7 @@ const authReducer = (state, action) => {
         isAuthenticated: false,
         user: null,
         token: null,
+        company: null,
         loading: false,
         error: null,
       };
@@ -42,6 +45,11 @@ const authReducer = (state, action) => {
       return {
         ...state,
         user: action.payload,
+      };
+    case 'SET_COMPANY':
+      return {
+        ...state,
+        company: action.payload,
       };
     case 'LOADING':
       return {
@@ -63,6 +71,7 @@ const initialState = {
   isAuthenticated: false,
   user: null,
   token: null,
+  company: null,
   loading: true, // Initially true while checking stored token
   error: null,
 };
@@ -93,13 +102,48 @@ export const AuthProvider = ({ children }) => {
           } else if (response.ok) {
             const data = await response.json();
             if (data.success && data.data) {
-              dispatch({
-                type: 'LOGIN_SUCCESS',
-                payload: {
-                  user: data.data.user,
-                  token: token,
-                },
-              });
+              // Fetch company details after getting user data
+              const fetchCompanyData = async () => {
+                try {
+                  const companyResponse = await fetch('http://localhost:8000/api/company/details', {
+                    method: 'GET',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+
+                  let company = null;
+                  if (companyResponse.ok) {
+                    const companyData = await companyResponse.json();
+                    if (companyData.success && companyData.data) {
+                      company = companyData.data;
+                    }
+                  }
+
+                  dispatch({
+                    type: 'LOGIN_SUCCESS',
+                    payload: {
+                      user: data.data.user,
+                      token: token,
+                      company: company,
+                    },
+                  });
+                } catch (error) {
+                  console.error('Error fetching company data:', error);
+                  // Still dispatch login success with user data but no company
+                  dispatch({
+                    type: 'LOGIN_SUCCESS',
+                    payload: {
+                      user: data.data.user,
+                      token: token,
+                      company: null,
+                    },
+                  });
+                }
+              };
+
+              fetchCompanyData();
             } else {
               // Token invalid, clear it
               localStorage.removeItem('authToken');
@@ -148,13 +192,44 @@ export const AuthProvider = ({ children }) => {
         const token = data.data.token;
         localStorage.setItem('authToken', token);
 
-        dispatch({
-          type: 'LOGIN_SUCCESS',
-          payload: {
-            user: data.data.user,
-            token: token,
-          },
-        });
+        // Fetch company details after successful login
+        try {
+          const companyResponse = await fetch('http://localhost:8000/api/company/details', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          let company = null;
+          if (companyResponse.ok) {
+            const companyData = await companyResponse.json();
+            if (companyData.success && companyData.data) {
+              company = companyData.data;
+            }
+          }
+
+          dispatch({
+            type: 'LOGIN_SUCCESS',
+            payload: {
+              user: data.data.user,
+              token: token,
+              company: company,
+            },
+          });
+        } catch (error) {
+          console.error('Error fetching company data:', error);
+          // Still dispatch login success with user data but no company
+          dispatch({
+            type: 'LOGIN_SUCCESS',
+            payload: {
+              user: data.data.user,
+              token: token,
+              company: null,
+            },
+          });
+        }
 
         return { success: true, message: data.message };
       } else {
@@ -237,11 +312,80 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Function to update company details
+  const updateCompany = async (companyData) => {
+    if (!state.token) {
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    try {
+      const response = await fetch('http://localhost:8000/api/company/update', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(companyData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        dispatch({
+          type: 'SET_COMPANY',
+          payload: data.data,
+        });
+        return { success: true, message: data.message, company: data.data };
+      } else {
+        const errorMessage = data.message || 'Failed to update company';
+        return { success: false, message: errorMessage };
+      }
+    } catch (error) {
+      console.error('Update company error:', error);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Function to get company details
+  const getCompanyDetails = async () => {
+    if (!state.token) {
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    try {
+      const response = await fetch('http://localhost:8000/api/company/details', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        dispatch({
+          type: 'SET_COMPANY',
+          payload: data.data,
+        });
+        return { success: true, company: data.data };
+      } else {
+        const errorMessage = data.message || 'Failed to get company details';
+        return { success: false, message: errorMessage };
+      }
+    } catch (error) {
+      console.error('Get company details error:', error);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
   const value = {
     ...state,
     login,
     logout,
     register,
+    updateCompany,
+    getCompanyDetails,
   };
 
   return (
