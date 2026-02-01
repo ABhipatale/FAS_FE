@@ -91,7 +91,8 @@ export default function FaceAttendance() {
       if (response.ok && data.success) {
         return data.data; // Return the matched user data
       } else {
-        return null; // No match found
+        // Store the error data for better UI feedback
+        return { error: data.message, distance: data.distance, threshold: data.threshold };
       }
     } catch (err) {
       console.error('Error recognizing face:', err);
@@ -146,7 +147,7 @@ export default function FaceAttendance() {
             const faceDescriptor = detections[0].descriptor;
             const recognitionResult = await recognizeFace(faceDescriptor);
             
-            if (recognitionResult) {
+            if (recognitionResult && !recognitionResult.error) {
               setDetectedPerson({
                 name: recognitionResult.user.name,
                 email: recognitionResult.user.email,
@@ -154,7 +155,14 @@ export default function FaceAttendance() {
                 distance: recognitionResult.distance
               });
             } else {
-              setDetectedPerson({ name: 'Unknown person', unknown: true });
+              // Face detected but not recognized properly
+              let message = 'Face not registered in system';
+              if (recognitionResult && recognitionResult.distance !== undefined) {
+                if (recognitionResult.distance >= 0.5) { // Changed from 0.6 to 0.5
+                  message = `Confidence too low (${Math.round((1 - recognitionResult.distance) * 100)}%)`;
+                }
+              }
+              setDetectedPerson({ name: 'Face Detected', unknown: true, message: message });
             }
           }
         } else {
@@ -241,7 +249,16 @@ export default function FaceAttendance() {
         });
         setShowVerificationDialog(true);
       } else {
-        setError('Face not recognized. Please register your face first or try again.');
+        // Show more specific error message based on the response
+        if (data && data.distance !== undefined) {
+          if (data.distance >= 0.5) { // Changed from 0.6 to 0.5
+            setError(`Face detected but confidence too low (${Math.round((1 - data.distance) * 100)}%). Please try again or register your face.`);
+          } else {
+            setError('Face not recognized. Please ensure your face is registered in the system.');
+          }
+        } else {
+          setError('Face not recognized. Please register your face first or try again.');
+        }
       }
     } catch (err) {
       console.error('Error during punch in/out:', err);
