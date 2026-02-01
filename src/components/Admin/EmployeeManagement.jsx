@@ -356,7 +356,6 @@ const EmployeeManagement = () => {
     e.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Initials for avatar
   const getInitials = (name) => {
     if (!name) return 'E';
     const parts = name.trim().split(' ');
@@ -365,7 +364,6 @@ const EmployeeManagement = () => {
       : parts[0][0].toUpperCase();
   };
 
-  // Deterministic color from name
   const getAvatarColor = (name) => {
     const colors = [
       ['#1e40af', '#3b82f6'],
@@ -415,45 +413,44 @@ const EmployeeManagement = () => {
     <div style={S.page}>
       <style>{CSS}</style>
 
-      {/* ─── BANNER ─── */}
-      <div style={S.banner}>
-        <div style={S.bannerInner}>
-          <div style={S.bannerLeft}>
-            <div style={S.bannerIconWrap}>
-              <FaUsers size={22} color="#fff" />
+      <div style={S.container}>
+
+        {/* ─── CONTROL BAR ─── */}
+        <div style={S.controlBar}>
+
+          {/* Left: Title + Search */}
+          <div style={S.controlLeft}>
+            <div style={S.titleBlock}>
+              <div style={S.titleIconWrap}>
+                <FaUsers size={18} color="#1e40af" />
+              </div>
+              <div>
+                <h1 style={S.pageTitle}>Employee Management</h1>
+                <span style={S.pageSub}>
+                  <span style={S.countHighlight}>{filtered.length}</span>
+                  {' '}of {employees.length} employees
+                </span>
+              </div>
             </div>
-            <div>
-              <h1 style={S.bannerTitle}>Employee Management</h1>
-              <p style={S.bannerSub}>Manage, monitor & maintain your workforce</p>
+
+            <div style={S.searchWrap}>
+              <FaSearch size={14} color="#94a3b8" style={S.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={S.searchInput}
+                className="search-input"
+              />
             </div>
           </div>
+
+          {/* Right: Add Button */}
           <button onClick={() => setShowAddModal(true)} style={S.addBtn} className="add-btn">
-            <FaPlus size={13} style={{ marginRight: 8 }} />
+            <FaPlus size={12} style={{ marginRight: 7 }} />
             Add Employee
           </button>
-        </div>
-      </div>
-
-      {/* ─── TOOLBAR ─── */}
-      <div style={S.container}>
-        <div style={S.toolbar}>
-          <div style={S.searchWrap}>
-            <FaSearch size={14} color="#94a3b8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={S.searchInput}
-              className="search-input"
-            />
-          </div>
-          <div style={S.toolbarRight}>
-            <span style={S.totalBadge}>
-              <span style={{ color: '#2563eb', fontWeight: 700 }}>{filtered.length}</span>
-              <span style={{ color: '#64748b' }}>&nbsp;/ {employees.length} Employees</span>
-            </span>
-          </div>
         </div>
 
         {/* ─── TABLE ─── */}
@@ -462,8 +459,14 @@ const EmployeeManagement = () => {
             <table style={S.table}>
               <thead>
                 <tr>
-                  {['Employee', 'Email', 'Shift', 'Face Reg', 'Actions'].map((h) => (
-                    <th key={h} style={S.th}>{h}</th>
+                  {[
+                    { label: 'Employee', width: '28%' },
+                    { label: 'Email', width: '24%' },
+                    { label: 'Shift', width: '16%' },
+                    { label: 'Face Reg', width: '18%' },
+                    { label: 'Actions', width: '14%' },
+                  ].map((h) => (
+                    <th key={h.label} style={{ ...S.th, width: h.width }}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
@@ -472,19 +475,23 @@ const EmployeeManagement = () => {
                   <tr>
                     <td colSpan={5} style={S.emptyCell}>
                       <div style={S.emptyBox}>
-                        <FaUsers size={32} color="#cbd5e1" />
+                        <div style={S.emptyIconWrap}>
+                          <FaUsers size={28} color="#cbd5e1" />
+                        </div>
                         <p style={S.emptyText}>No employees found</p>
-                        <p style={S.emptySubText}>Try adjusting your search or add a new employee</p>
+                        <p style={S.emptySubText}>
+                          {search ? 'Try a different search term' : 'Click "Add Employee" to get started'}
+                        </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((emp, idx) => {
+                  filtered.map((emp) => {
                     const [bg1, bg2] = getAvatarColor(emp.name);
                     const face = hasFaceDescriptors(emp);
                     return (
                       <tr key={emp.id} style={S.tr} className="table-row">
-                        {/* Name + Avatar */}
+                        {/* Name */}
                         <td style={S.td}>
                           <div style={S.empCell}>
                             <div style={{ ...S.avatar, background: `linear-gradient(135deg, ${bg1}, ${bg2})` }}>
@@ -492,7 +499,7 @@ const EmployeeManagement = () => {
                             </div>
                             <div>
                               <div style={S.empName}>{emp.name}</div>
-                              <div style={S.empPosition}>{emp.position || 'No position'}</div>
+                              <div style={S.empPosition}>{emp.position || 'No position set'}</div>
                             </div>
                           </div>
                         </td>
@@ -502,9 +509,11 @@ const EmployeeManagement = () => {
                         </td>
                         {/* Shift */}
                         <td style={S.td}>
-                          <span style={S.shiftBadge}>
-                            {emp.shift ? emp.shift.shift_name : 'Not assigned'}
-                          </span>
+                          {emp.shift ? (
+                            <span style={S.shiftBadge}>{emp.shift.shift_name}</span>
+                          ) : (
+                            <span style={S.shiftEmpty}>—</span>
+                          )}
                         </td>
                         {/* Face */}
                         <td style={S.td}>
@@ -517,13 +526,13 @@ const EmployeeManagement = () => {
                         <td style={S.td}>
                           <div style={S.actions}>
                             <button onClick={() => setSelectedEmployee(emp)} style={S.actionBtn} className="action-btn action-view" title="View Details">
-                              <FaEye size={15} />
+                              <FaEye size={14} />
                             </button>
                             <button onClick={() => {}} style={S.actionBtn} className="action-btn action-edit" title="Edit">
-                              <FaEdit size={15} />
+                              <FaEdit size={14} />
                             </button>
                             <button onClick={() => setDeleteConfirm(emp.id)} style={S.actionBtn} className="action-btn action-delete" title="Delete">
-                              <FaTrash size={15} />
+                              <FaTrash size={14} />
                             </button>
                           </div>
                         </td>
@@ -540,17 +549,19 @@ const EmployeeManagement = () => {
       {/* ─── DELETE CONFIRM MODAL ─── */}
       {deleteConfirm && (
         <div style={S.overlay} className="modal-overlay">
-          <div style={S.confirmModal} className="confirm-modal">
-            <div style={S.confirmIcon}>
-              <FaTrash size={22} color="#dc2626" />
+          <div style={S.confirmModal} className="anim-modal">
+            <div style={S.confirmIconWrap}>
+              <FaTrash size={20} color="#dc2626" />
             </div>
             <h3 style={S.confirmTitle}>Delete Employee</h3>
             <p style={S.confirmDesc}>
-              This action cannot be undone. The employee record will be permanently removed.
+              This action is permanent and cannot be undone. The employee and all associated records will be removed.
             </p>
             <div style={S.confirmButtons}>
               <button onClick={() => setDeleteConfirm(null)} style={S.btnCancel} className="btn-cancel">Cancel</button>
-              <button onClick={() => handleDelete(deleteConfirm)} style={S.btnDanger} className="btn-danger">Delete</button>
+              <button onClick={() => handleDelete(deleteConfirm)} style={S.btnDanger} className="btn-danger">
+                <FaTrash size={12} style={{ marginRight: 6 }} /> Delete
+              </button>
             </div>
           </div>
         </div>
@@ -559,19 +570,19 @@ const EmployeeManagement = () => {
       {/* ─── ADD EMPLOYEE MODAL ─── */}
       {showAddModal && (
         <div style={S.overlay} className="modal-overlay">
-          <div style={{ ...S.modal, maxWidth: 860 }} className="modal">
+          <div style={{ ...S.modal, maxWidth: 860 }} className="anim-modal">
             <div style={S.modalHeader}>
               <div style={S.modalHeaderLeft}>
                 <div style={S.modalIconWrap}>
-                  <FaPlus size={16} color="#2563eb" />
+                  <FaPlus size={15} color="#2563eb" />
                 </div>
                 <div>
                   <h2 style={S.modalTitle}>Add New Employee</h2>
-                  <p style={S.modalSub}>Fill in the details to register a new team member</p>
+                  <p style={S.modalSub}>Fill in all required details to register a new team member</p>
                 </div>
               </div>
               <button onClick={() => setShowAddModal(false)} style={S.closeBtn} className="close-btn">
-                <FaTimes size={18} />
+                <FaTimes size={17} />
               </button>
             </div>
             <div style={S.modalBody}>
@@ -584,7 +595,7 @@ const EmployeeManagement = () => {
       {/* ─── VIEW DETAILS MODAL ─── */}
       {selectedEmployee && (
         <div style={S.overlay} className="modal-overlay">
-          <div style={{ ...S.modal, maxWidth: 600 }} className="modal">
+          <div style={{ ...S.modal, maxWidth: 580 }} className="anim-modal">
             <div style={S.modalHeader}>
               <div style={S.modalHeaderLeft}>
                 {(() => {
@@ -597,23 +608,25 @@ const EmployeeManagement = () => {
                 })()}
                 <div>
                   <h2 style={S.modalTitle}>{selectedEmployee.name}</h2>
-                  <p style={S.modalSub}>{selectedEmployee.position || 'No position'} · {selectedEmployee.department || selectedEmployee.role || '—'}</p>
+                  <p style={S.modalSub}>
+                    {selectedEmployee.position || 'No position'} &middot; {selectedEmployee.department || selectedEmployee.role || '—'}
+                  </p>
                 </div>
               </div>
               <button onClick={() => setSelectedEmployee(null)} style={S.closeBtn} className="close-btn">
-                <FaTimes size={18} />
+                <FaTimes size={17} />
               </button>
             </div>
 
             <div style={S.modalBody}>
-              {/* Face status banner */}
+              {/* Face status strip */}
               {(() => {
                 const face = hasFaceDescriptors(selectedEmployee);
                 return (
                   <div style={{ ...S.faceBanner, ...(face ? S.faceBannerYes : S.faceBannerNo) }}>
                     <span style={S.faceBannerDot(face)}></span>
                     <span style={S.faceBannerText(face)}>
-                      Face Recognition: {face ? 'Registered' : 'Not Registered'}
+                      Face Recognition — {face ? 'Registered' : 'Not Registered'}
                     </span>
                   </div>
                 );
@@ -622,18 +635,21 @@ const EmployeeManagement = () => {
               {/* Details grid */}
               <div style={S.detailGrid}>
                 {[
-                  { label: 'Email', value: selectedEmployee.email },
-                  { label: 'Phone', value: selectedEmployee.phone },
-                  { label: 'Position', value: selectedEmployee.position },
-                  { label: 'Role', value: selectedEmployee.role, capitalize: true },
-                  { label: 'Age', value: selectedEmployee.age },
-                  { label: 'Date of Birth', value: selectedEmployee.dob },
-                  { label: 'Sex', value: selectedEmployee.sex },
-                  { label: 'Address', value: selectedEmployee.address },
-                  { label: 'Shift', value: selectedEmployee.shift?.shift_name },
+                  { label: 'Email', value: selectedEmployee.email, icon: '✉' },
+                  { label: 'Phone', value: selectedEmployee.phone, icon: '☎' },
+                  { label: 'Position', value: selectedEmployee.position, icon: '💼' },
+                  { label: 'Role', value: selectedEmployee.role, capitalize: true, icon: '🏷' },
+                  { label: 'Age', value: selectedEmployee.age, icon: '🔢' },
+                  { label: 'Date of Birth', value: selectedEmployee.dob, icon: '📅' },
+                  { label: 'Sex', value: selectedEmployee.sex, icon: '👤' },
+                  { label: 'Address', value: selectedEmployee.address, icon: '📍' },
+                  { label: 'Shift', value: selectedEmployee.shift?.shift_name, icon: '🕐' },
                 ].map((item) => (
                   <div key={item.label} style={S.detailItem}>
-                    <span style={S.detailLabel}>{item.label}</span>
+                    <div style={S.detailTop}>
+                      <span style={S.detailIcon}>{item.icon}</span>
+                      <span style={S.detailLabel}>{item.label}</span>
+                    </div>
                     <span style={{ ...S.detailValue, textTransform: item.capitalize ? 'capitalize' : 'none' }}>
                       {item.value || '—'}
                     </span>
@@ -654,7 +670,7 @@ export default EmployeeManagement;
 const S = {
   page: {
     minHeight: '100vh',
-    background: '#f1f5f9',
+    background: '#eef2f7',
     fontFamily: "'Segoe UI', 'Helvetica Neue', sans-serif",
   },
 
@@ -665,166 +681,160 @@ const S = {
     alignItems: 'center',
     justifyContent: 'center',
     height: '100vh',
-    gap: 16,
+    gap: 14,
   },
   loaderText: {
     color: '#64748b',
     fontSize: 14,
     fontWeight: 500,
+    letterSpacing: '0.2px',
   },
 
   // Error
   errorBox: {
-    maxWidth: 600,
-    margin: '80px auto',
+    maxWidth: 580,
+    margin: '100px auto',
     background: '#fef2f2',
     border: '1px solid #fecaca',
     borderRadius: 12,
     padding: '20px 24px',
     display: 'flex',
-    gap: 16,
+    gap: 14,
     alignItems: 'flex-start',
   },
-  errorIcon: {
-    fontSize: 24,
-    color: '#dc2626',
-  },
-  errorTitle: {
-    color: '#991b1b',
-    fontSize: 15,
-    display: 'block',
-    marginBottom: 4,
-  },
-  errorMsg: {
-    color: '#dc2626',
-    fontSize: 13,
-    margin: 0,
+  errorIcon: { fontSize: 22, color: '#dc2626' },
+  errorTitle: { color: '#991b1b', fontSize: 14, display: 'block', marginBottom: 3 },
+  errorMsg: { color: '#dc2626', fontSize: 13, margin: 0 },
+
+  // Container
+  container: {
+    maxWidth: 1160,
+    margin: '0 auto',
+    padding: '28px 28px 56px',
   },
 
-  // Banner
-  banner: {
-    background: 'linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #2563eb 100%)',
-    padding: '26px 32px',
-    boxShadow: '0 4px 24px rgba(30,58,95,0.35)',
-  },
-  bannerInner: {
-    maxWidth: 1140,
-    margin: '0 auto',
+  // ─── CONTROL BAR ───
+  controlBar: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  bannerLeft: {
-    display: 'flex',
-    alignItems: 'center',
+    background: '#fff',
+    border: '1px solid #e2e8f0',
+    borderRadius: 14,
+    padding: '16px 20px',
+    marginBottom: 20,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
     gap: 16,
   },
-  bannerIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    background: 'rgba(255,255,255,0.13)',
+  controlLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 20,
+    flex: 1,
+    minWidth: 0,
+  },
+
+  // Title block
+  titleBlock: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    flexShrink: 0,
+  },
+  titleIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    background: '#eff6ff',
+    border: '1px solid #dbeafe',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bannerTitle: {
+  pageTitle: {
     margin: 0,
-    color: '#fff',
-    fontSize: 21,
+    fontSize: 15,
     fontWeight: 700,
-    letterSpacing: '-0.3px',
+    color: '#1e293b',
+    letterSpacing: '-0.2px',
   },
-  bannerSub: {
-    margin: '3px 0 0',
-    color: 'rgba(255,255,255,0.55)',
-    fontSize: 13,
+  pageSub: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: 500,
   },
-  addBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    background: '#fff',
-    color: '#1e40af',
-    border: 'none',
-    padding: '10px 22px',
-    borderRadius: 9,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
-    transition: 'all 0.2s',
+  countHighlight: {
+    color: '#2563eb',
+    fontWeight: 700,
   },
 
-  // Container
-  container: {
-    maxWidth: 1140,
-    margin: '0 auto',
-    padding: '26px 24px 48px',
-  },
-
-  // Toolbar
-  toolbar: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-    gap: 16,
-  },
+  // Search
   searchWrap: {
     position: 'relative',
-    width: 320,
+    flex: 1,
+    maxWidth: 340,
+  },
+  searchIcon: {
+    position: 'absolute',
+    left: 13,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    pointerEvents: 'none',
   },
   searchInput: {
     width: '100%',
-    padding: '10px 16px 10px 40px',
-    borderRadius: 9,
+    padding: '9px 16px 9px 38px',
+    borderRadius: 8,
     border: '1px solid #e2e8f0',
-    background: '#fff',
+    background: '#f8fafc',
     fontSize: 13,
     color: '#334155',
     outline: 'none',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-    transition: 'border 0.2s, box-shadow 0.2s',
-  },
-  toolbarRight: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  totalBadge: {
-    fontSize: 13,
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 9,
-    padding: '7px 14px',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+    transition: 'all 0.2s',
   },
 
-  // Table
+  // Add button
+  addBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    background: 'linear-gradient(135deg, #1e40af, #2563eb)',
+    color: '#fff',
+    border: 'none',
+    padding: '9px 20px',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(37,99,235,0.35)',
+    transition: 'all 0.2s',
+    flexShrink: 0,
+    letterSpacing: '0.2px',
+  },
+
+  // ─── TABLE ───
   tableCard: {
     background: '#fff',
     borderRadius: 14,
-    boxShadow: '0 2px 14px rgba(0,0,0,0.06)',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
     border: '1px solid #e2e8f0',
     overflow: 'hidden',
   },
-  tableScroll: {
-    overflowX: 'auto',
-  },
+  tableScroll: { overflowX: 'auto' },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    minWidth: 700,
+    minWidth: 720,
   },
   th: {
-    padding: '13px 20px',
+    padding: '12px 20px',
     textAlign: 'left',
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: 700,
     color: '#64748b',
     textTransform: 'uppercase',
-    letterSpacing: '0.7px',
+    letterSpacing: '0.8px',
     background: '#f8fafc',
-    borderBottom: '1px solid #e2e8f0',
+    borderBottom: '2px solid #eef2f7',
     whiteSpace: 'nowrap',
   },
   tr: {
@@ -832,17 +842,132 @@ const S = {
     transition: 'background 0.15s',
   },
   td: {
-    padding: '14px 20px',
+    padding: '13px 20px',
     verticalAlign: 'middle',
   },
 
   // Employee cell
-  empCell: {
+  empCell: { display: 'flex', alignItems: 'center', gap: 12 },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 9,
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 700,
+    flexShrink: 0,
+    boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
   },
-  avatar: {
+  empName: { fontSize: 13.5, fontWeight: 600, color: '#1e293b' },
+  empPosition: { fontSize: 11.5, color: '#94a3b8', marginTop: 1.5 },
+  emailText: { fontSize: 13, color: '#475569' },
+
+  // Shift
+  shiftBadge: {
+    fontSize: 12,
+    color: '#334155',
+    background: '#f1f5f9',
+    border: '1px solid #e2e8f0',
+    padding: '4px 10px',
+    borderRadius: 6,
+    fontWeight: 500,
+  },
+  shiftEmpty: { fontSize: 13, color: '#cbd5e1' },
+
+  // Face pill
+  facePill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 11.5,
+    fontWeight: 600,
+    padding: '4px 10px',
+    borderRadius: 20,
+  },
+  facePillYes: { background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' },
+  facePillNo: { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' },
+  faceDot: (active) => ({
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+    background: active ? '#16a34a' : '#dc2626',
+  }),
+
+  // Actions
+  actions: { display: 'flex', gap: 5 },
+  actionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 7,
+    border: '1px solid #eef2f7',
+    background: '#fafbfc',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: '#94a3b8',
+    transition: 'all 0.18s',
+  },
+
+  // Empty
+  emptyCell: { padding: '64px 20px', textAlign: 'center' },
+  emptyBox: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 },
+  emptyIconWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 14,
+    background: '#f1f5f9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: { fontSize: 15, fontWeight: 600, color: '#475569', margin: 0 },
+  emptySubText: { fontSize: 13, color: '#94a3b8', margin: 0 },
+
+  // ─── OVERLAY ───
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(15,23,42,0.5)',
+    backdropFilter: 'blur(3px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: 24,
+  },
+
+  // ─── MODAL ───
+  modal: {
+    background: '#fff',
+    borderRadius: 16,
+    width: '100%',
+    maxHeight: '88vh',
+    overflowY: 'auto',
+    boxShadow: '0 20px 44px rgba(15,23,42,0.2)',
+  },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    padding: '20px 24px 16px',
+    borderBottom: '1px solid #f1f5f9',
+  },
+  modalHeaderLeft: { display: 'flex', alignItems: 'center', gap: 14 },
+  modalIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    background: '#eff6ff',
+    border: '1px solid #dbeafe',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalAvatar: {
     width: 40,
     height: 40,
     borderRadius: 10,
@@ -850,217 +975,48 @@ const S = {
     alignItems: 'center',
     justifyContent: 'center',
     color: '#fff',
-    fontSize: 14,
-    fontWeight: 700,
-    flexShrink: 0,
-    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-  },
-  empName: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: '#1e293b',
-  },
-  empPosition: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 1,
-  },
-
-  emailText: {
-    fontSize: 13,
-    color: '#475569',
-  },
-  shiftBadge: {
-    fontSize: 12,
-    color: '#475569',
-    background: '#f1f5f9',
-    border: '1px solid #e2e8f0',
-    padding: '4px 10px',
-    borderRadius: 6,
-  },
-
-  // Face pill
-  facePill: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-    fontSize: 12,
-    fontWeight: 600,
-    padding: '4px 10px',
-    borderRadius: 20,
-  },
-  facePillYes: {
-    background: '#f0fdf4',
-    color: '#16a34a',
-    border: '1px solid #bbf7d0',
-  },
-  facePillNo: {
-    background: '#fef2f2',
-    color: '#dc2626',
-    border: '1px solid #fecaca',
-  },
-  faceDot: (active) => ({
-    width: 7,
-    height: 7,
-    borderRadius: '50%',
-    background: active ? '#16a34a' : '#dc2626',
-  }),
-
-  // Actions
-  actions: {
-    display: 'flex',
-    gap: 6,
-  },
-  actionBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 7,
-    border: '1px solid #e2e8f0',
-    background: '#fff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    color: '#64748b',
-    transition: 'all 0.18s',
-  },
-
-  // Empty
-  emptyCell: {
-    padding: '60px 20px',
-    textAlign: 'center',
-  },
-  emptyBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyText: {
     fontSize: 15,
-    fontWeight: 600,
-    color: '#475569',
-    margin: 0,
-  },
-  emptySubText: {
-    fontSize: 13,
-    color: '#94a3b8',
-    margin: 0,
-  },
-
-  // Overlay
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(15, 23, 42, 0.55)',
-    backdropFilter: 'blur(4px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: '24px',
-  },
-
-  // Modal
-  modal: {
-    background: '#fff',
-    borderRadius: 16,
-    width: '100%',
-    maxHeight: '88vh',
-    overflowY: 'auto',
-    boxShadow: '0 24px 48px rgba(15,23,42,0.22)',
-    animation: 'modalIn 0.22s cubic-bezier(.4,0,.2,1)',
-  },
-  modalHeader: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    padding: '22px 24px 18px',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  modalHeaderLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-  },
-  modalIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    background: '#eff6ff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fontSize: 16,
     fontWeight: 700,
     boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
   },
-  modalTitle: {
-    margin: 0,
-    fontSize: 17,
-    fontWeight: 700,
-    color: '#1e293b',
-  },
-  modalSub: {
-    margin: '2px 0 0',
-    fontSize: 12,
-    color: '#64748b',
-  },
+  modalTitle: { margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' },
+  modalSub: { margin: '2px 0 0', fontSize: 12, color: '#64748b' },
   closeBtn: {
     background: 'none',
     border: 'none',
     color: '#94a3b8',
     cursor: 'pointer',
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 7,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'all 0.18s',
   },
-  modalBody: {
-    padding: '22px 24px 26px',
-  },
+  modalBody: { padding: '20px 24px 24px' },
 
   // Face banner
   faceBanner: {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    padding: '10px 14px',
-    borderRadius: 9,
-    marginBottom: 20,
-    fontSize: 13,
+    padding: '9px 14px',
+    borderRadius: 8,
+    marginBottom: 18,
+    fontSize: 12.5,
     fontWeight: 600,
   },
-  faceBannerYes: {
-    background: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-  },
-  faceBannerNo: {
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-  },
+  faceBannerYes: { background: '#f0fdf4', border: '1px solid #bbf7d0' },
+  faceBannerNo: { background: '#fef2f2', border: '1px solid #fecaca' },
   faceBannerDot: (active) => ({
-    width: 9,
-    height: 9,
+    width: 8,
+    height: 8,
     borderRadius: '50%',
     background: active ? '#16a34a' : '#dc2626',
     flexShrink: 0,
   }),
-  faceBannerText: (active) => ({
-    color: active ? '#16a34a' : '#dc2626',
-  }),
+  faceBannerText: (active) => ({ color: active ? '#16a34a' : '#dc2626' }),
 
   // Detail grid
   detailGrid: {
@@ -1074,25 +1030,23 @@ const S = {
   },
   detailItem: {
     background: '#fff',
-    padding: '13px 16px',
+    padding: '12px 15px',
     display: 'flex',
     flexDirection: 'column',
-    gap: 3,
+    gap: 4,
   },
+  detailTop: { display: 'flex', alignItems: 'center', gap: 6 },
+  detailIcon: { fontSize: 12 },
   detailLabel: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: 700,
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: '0.6px',
   },
-  detailValue: {
-    fontSize: 13,
-    fontWeight: 500,
-    color: '#1e293b',
-  },
+  detailValue: { fontSize: 13, fontWeight: 500, color: '#1e293b', paddingLeft: 18 },
 
-  // Confirm modal
+  // ─── CONFIRM MODAL ───
   confirmModal: {
     background: '#fff',
     borderRadius: 16,
@@ -1100,38 +1054,24 @@ const S = {
     width: '100%',
     maxWidth: 400,
     textAlign: 'center',
-    boxShadow: '0 24px 48px rgba(15,23,42,0.22)',
-    animation: 'modalIn 0.22s cubic-bezier(.4,0,.2,1)',
+    boxShadow: '0 20px 44px rgba(15,23,42,0.2)',
   },
-  confirmIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
+  confirmIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 13,
     background: '#fef2f2',
+    border: '1px solid #fecaca',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    margin: '0 auto 18px',
+    margin: '0 auto 16px',
   },
-  confirmTitle: {
-    margin: '0 0 8px',
-    fontSize: 18,
-    fontWeight: 700,
-    color: '#1e293b',
-  },
-  confirmDesc: {
-    margin: '0 0 24px',
-    fontSize: 13,
-    color: '#64748b',
-    lineHeight: 1.5,
-  },
-  confirmButtons: {
-    display: 'flex',
-    gap: 10,
-    justifyContent: 'center',
-  },
+  confirmTitle: { margin: '0 0 8px', fontSize: 17, fontWeight: 700, color: '#1e293b' },
+  confirmDesc: { margin: '0 0 22px', fontSize: 13, color: '#64748b', lineHeight: 1.55 },
+  confirmButtons: { display: 'flex', gap: 10, justifyContent: 'center' },
   btnCancel: {
-    padding: '9px 22px',
+    padding: '8px 22px',
     borderRadius: 8,
     border: '1px solid #e2e8f0',
     background: '#fff',
@@ -1142,7 +1082,10 @@ const S = {
     transition: 'all 0.18s',
   },
   btnDanger: {
-    padding: '9px 22px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '8px 22px',
     borderRadius: 8,
     border: 'none',
     background: 'linear-gradient(135deg, #dc2626, #ef4444)',
@@ -1161,36 +1104,42 @@ const CSS = `
     to { transform: rotate(360deg); }
   }
   @keyframes modalIn {
-    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    from { opacity: 0; transform: translateY(14px) scale(0.975); }
     to   { opacity: 1; transform: translateY(0)  scale(1); }
   }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
   .spinner {
-    width: 40px; height: 40px;
-    border: 4px solid #e2e8f0;
+    width: 38px; height: 38px;
+    border: 3.5px solid #e2e8f0;
     border-top-color: #2563eb;
     border-radius: 50%;
-    animation: spin 0.65s linear infinite;
+    animation: spin 0.6s linear infinite;
   }
   .search-input:focus {
     border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
   }
-  .table-row:hover {
-    background: #f8fafc !important;
-  }
+  .table-row:hover { background: #f8fafc !important; }
   .action-btn:hover { border-color: transparent; }
-  .action-view:hover { background: #eff6ff; color: #2563eb; }
-  .action-edit:hover { background: #f0fdf4; color: #16a34a; }
+  .action-view:hover  { background: #eff6ff; color: #2563eb; }
+  .action-edit:hover   { background: #f0fdf4; color: #16a34a; }
   .action-delete:hover { background: #fef2f2; color: #dc2626; }
   .add-btn:hover {
-    background: #f0f9ff;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.16);
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.4);
     transform: translateY(-1px);
   }
   .close-btn:hover { background: #f1f5f9; color: #475569; }
   .btn-cancel:hover { background: #f1f5f9; }
-  .btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
+  .btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220,38,38,0.4);
+  }
   .modal-overlay { animation: fadeIn 0.18s ease; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .anim-modal { animation: modalIn 0.22s cubic-bezier(.4,0,.2,1); }
   * { box-sizing: border-box; }
 `;
