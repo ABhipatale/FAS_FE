@@ -289,7 +289,8 @@ export default function EnhancedDashboard() {
           faceRegistered: record.user ? (record.user.face_descriptor && record.user.face_descriptor.length > 0) : false,
           punchIn: record.punch_in_time ? new Date(record.punch_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
           punchOut: record.punch_out_time ? new Date(record.punch_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
-          status: record.status || 'absent'
+          status: record.status || 'absent',
+          lateMark: record.late_mark || false
         }));
         setAttendanceData(transformedData);
       }
@@ -765,7 +766,7 @@ export default function EnhancedDashboard() {
                                   {record.name}
                                 </button>
                                 <p className="text-xs text-gray-500 mt-0.5">{record.email}</p>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
                                   <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
                                     {record.shift}
                                   </span>
@@ -775,14 +776,26 @@ export default function EnhancedDashboard() {
                                     }`}>
                                     {record.faceRegistered ? 'Face ID' : 'No Face ID'}
                                   </span>
+                                  {record.lateMark && (
+                                    <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md font-semibold">
+                                      LATE
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                              {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                                {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                              </span>
+                              {record.lateMark && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                  {record.lateMark ? '30+ min late' : ''}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="space-y-1">
@@ -918,7 +931,7 @@ export default function EnhancedDashboard() {
                     <span className="text-xs text-gray-600">Late</span>
                   </div>
                   <span className="text-xs font-semibold text-gray-900">
-                    {attendanceData.filter(r => r.status === 'late').length}
+                    {attendanceData.filter(r => r.lateMark || r.status === 'late').length}
                   </span>
                 </div>
               </div>
