@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import FloatingParticles from "../3D/FloatingParticles";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -56,9 +57,20 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-semibold text-center mb-6">Register</h2>
+    <div className="min-h-screen flex items-center justify-center bg-[#020c1d] p-4">
+      <FloatingParticles/>
+       <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none select-none">
+        <h1 className="text-[4vw] mb-[74vh] font-extrabold uppercase tracking-widest text-white/40 sm:top-0">
+          Let's Register first!
+        </h1>
+        <p className="max-w-xl mt-10 text-sm md:text-base text-white/30">
+          Create your account and start building your workspace in seconds.
+        </p>
+      </div>
+
+
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md mt-14">
+        <h2 className="text-2xl font-bold text-center mb-6 uppercase">Register</h2>
 
         {/* Success/Error Messages */}
         {message && (
@@ -142,11 +154,10 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 rounded transition ${
-              loading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
+            className={`w-full py-2 rounded transition ${loading
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
           >
             {loading ? 'Registering...' : 'Register'}
           </button>

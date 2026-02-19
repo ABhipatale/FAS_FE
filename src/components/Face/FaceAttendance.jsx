@@ -3,6 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import * as faceapi from 'face-api.js';
 import API_CONFIG, { apiCall } from '../../config/api';
 import { FaCheck, FaTimes } from 'react-icons/fa';
+import { Camera, ScanFace, PlayCircle, StopCircle, LogIn, LogOut, Info, LogOutIcon, LogInIcon } from "lucide-react";
+
 
 const MODEL_URL = '/models';
 
@@ -36,7 +38,7 @@ export default function FaceAttendance() {
           setError('Failed to load face detection model. Please refresh the page.');
           return; // Stop if critical model fails
         }
-        
+
         try {
           await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
           console.log('Face landmark 68 net loaded successfully');
@@ -45,7 +47,7 @@ export default function FaceAttendance() {
           setError('Failed to load face landmark model. Please refresh the page.');
           return; // Stop if critical model fails
         }
-        
+
         try {
           await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
           console.log('Face recognition net loaded successfully');
@@ -60,15 +62,15 @@ export default function FaceAttendance() {
         setError('Error loading face recognition models. Please try refreshing the page.');
       }
     };
-    
+
     loadModels();
-    
+
     // Request camera access when component mounts
     startCamera();
-    
+
     // Start the recognition loop when component mounts
     startRecognition();
-    
+
     return () => {
       // Clean up camera stream when component unmounts
       stopRecognition();
@@ -87,7 +89,7 @@ export default function FaceAttendance() {
           face_descriptor: Array.from(faceDescriptor) // Convert Float32Array to regular array
         })
       });
-      
+
       if (response.ok && data.success) {
         return data.data; // Return the matched user data
       } else {
@@ -99,7 +101,7 @@ export default function FaceAttendance() {
       return null;
     }
   };
-  
+
   const verifyAttendance = async (faceDescriptor) => {
     try {
       // Send face descriptor to backend for recognition
@@ -109,7 +111,7 @@ export default function FaceAttendance() {
           face_descriptor: Array.from(faceDescriptor) // Convert Float32Array to regular array
         })
       });
-      
+
       if (response.ok && data.success) {
         return data.data; // Return the matched user data
       } else {
@@ -126,18 +128,18 @@ export default function FaceAttendance() {
       setError('Camera not available');
       return;
     }
-    
+
     setRecognitionActive(true);
-    
+
     const recognizeLoop = async () => {
       if (!recognitionActive) return;
-      
+
       try {
         // Detect face in the current video frame
         const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
           .withFaceLandmarks()
           .withFaceDescriptors();
-        
+
         if (detections.length > 0) {
           if (detections.length > 1) {
             // Multiple faces detected, show a warning
@@ -146,7 +148,7 @@ export default function FaceAttendance() {
             // Single face detected, try to recognize it
             const faceDescriptor = detections[0].descriptor;
             const recognitionResult = await recognizeFace(faceDescriptor);
-            
+
             if (recognitionResult && !recognitionResult.error) {
               setDetectedPerson({
                 name: recognitionResult.user.name,
@@ -172,26 +174,26 @@ export default function FaceAttendance() {
       } catch (err) {
         console.error('Error in recognition loop:', err);
       }
-      
+
       // Schedule the next recognition after a delay
       setTimeout(recognizeLoop, 500); // Adjust this interval as needed
     };
-    
+
     // Start the recognition loop
     recognizeLoop();
   };
-  
+
   const stopRecognition = () => {
     setRecognitionActive(false);
     setDetectedPerson(null);
   };
-  
+
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' }
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         setStream(mediaStream);
@@ -204,7 +206,7 @@ export default function FaceAttendance() {
 
   const initiatePunch = async (type) => {
     setPunchType(type);
-    
+
     if (!videoRef.current) {
       setError('Camera not available');
       return;
@@ -220,25 +222,25 @@ export default function FaceAttendance() {
       const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptors();
-      
+
       if (detections.length === 0) {
         setError('No face detected. Please position yourself in front of the camera.');
         setLoading(false);
         return;
       }
-      
+
       if (detections.length > 1) {
         setError('Multiple faces detected. Please ensure only your face is in the frame.');
         setLoading(false);
         return;
       }
-      
+
       // Get the face descriptor
       const faceDescriptor = detections[0].descriptor;
-      
+
       // Verify the face first
       const verificationResult = await verifyAttendance(faceDescriptor);
-      
+
       if (verificationResult) {
         // Show verification dialog
         setVerificationData({
@@ -267,20 +269,20 @@ export default function FaceAttendance() {
       setLoading(false);
     }
   };
-  
+
   const confirmAttendance = async () => {
     if (!verificationData) {
       setError('No verification data available');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       // In a real implementation, you would send a request to mark punch in/out
       // For now, we'll just simulate the action
       setMessage(`Punch ${verificationData.punchType} recorded for ${verificationData.user.name}!`);
-      
+
       // Update attendance status
       if (verificationData.punchType === 'in') {
         setAttendanceStatus(prev => ({
@@ -293,7 +295,7 @@ export default function FaceAttendance() {
           punchOut: new Date().toLocaleTimeString()
         }));
       }
-      
+
       setAttendanceResult({
         ...verificationData,
         punchType: verificationData.punchType
@@ -307,7 +309,7 @@ export default function FaceAttendance() {
       setVerificationData(null);
     }
   };
-  
+
   const cancelAttendance = () => {
     setShowVerificationDialog(false);
     setVerificationData(null);
@@ -315,18 +317,25 @@ export default function FaceAttendance() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
+    <div className="min-h-screen bg-blue-950 py-8">
+
       <div className="container mx-auto px-4 max-w-4xl">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">Face Attendance</h1>
-          
+
+        <div className="bg-blue/60 rounded-lg shadow-md ">
+          <h1 className="text-2xl font-bold text-gray-50 mb-3 text-center">Attendance, Reinvented</h1>
+          <p className="text-gray-400 text-center mb-3">
+            Seamless. Secure. Contactless workforce tracking.
+          </p>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Camera Section */}
             <div className="space-y-6">
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <h2 className="text-xl font-semibold mb-4">Punch In / Punch Out</h2>
-                
-                <div className="relative bg-black rounded overflow-hidden">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-xl">
+                <h2 className="text-xl font-semibold mb-4 text-center text-white tracking-wide">
+                  Punch In / Punch Out
+                </h2>
+
+                <div className="relative bg-black rounded-xl overflow-hidden border border-white/10">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -334,54 +343,60 @@ export default function FaceAttendance() {
                     muted
                     className="w-full h-auto max-h-96 object-contain"
                   />
+
+                  {/* Face Frame Overlay */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="border-2 border-white rounded-full w-48 h-48 md:w-64 md:h-64 flex items-center justify-center">
-                      <div className="border-2 border-white rounded-full w-40 h-40 md:w-56 md:h-56"></div>
+                    <div className="border border-white/40 rounded-full w-48 h-48 md:w-64 md:h-64 flex items-center justify-center animate-pulse">
+                      <div className="border border-white/30 rounded-full w-40 h-40 md:w-56 md:h-56"></div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex space-x-3 mt-4">
+
+                {/* Punch Buttons */}
+                <div className="flex space-x-3 mt-5">
                   <button
                     onClick={() => initiatePunch('in')}
                     disabled={loading}
-                    className={`flex-1 py-3 rounded transition font-medium flex items-center justify-center ${
-                      loading 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
+                    className={`flex-1 py-3 rounded-xl transition font-semibold flex items-center justify-center gap-2
+        ${loading
+                        ? 'bg-gray-500/40 cursor-not-allowed text-white/60'
+                        : 'bg-emerald-500/10 hover:bg-emerald-500 hover:text-green-50 text-emerald-400 border border-emerald-400/40'
+                      }`}
                   >
-                    {/* <FaClockIn className="mr-2" /> */}
+                    <LogInIcon />
                     {loading ? 'Processing...' : 'Punch In'}
                   </button>
+
                   <button
                     onClick={() => initiatePunch('out')}
                     disabled={loading}
-                    className={`flex-1 py-3 rounded transition font-medium flex items-center justify-center ${
-                      loading 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-red-600 hover:bg-red-700 text-white'
-                    }`}
+                    className={`flex-1 py-3 rounded-xl transition font-semibold flex items-center justify-center gap-2
+        ${loading
+                        ? 'bg-gray-500/40 cursor-not-allowed text-white/60'
+                        : 'bg-rose-500/10 hover:bg-rose-500 hover:text-rose-50 text-rose-400 border border-rose-400/40'
+                      }`}
                   >
-                    {/* <FaClockOut className="mr-2" /> */}
+                    <LogOutIcon />
                     {loading ? 'Processing...' : 'Punch Out'}
                   </button>
                 </div>
-                
-                <div className="flex space-x-3 mt-3">
+
+                {/* Recognition Toggle */}
+                <div className="flex space-x-3 mt-4">
                   <button
                     onClick={recognitionActive ? stopRecognition : startRecognition}
-                    className={`flex-1 py-2 rounded transition font-medium ${
-                      recognitionActive 
-                        ? 'bg-red-600 hover:bg-red-700 text-white' 
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
+                    className={`flex-1 py-2 rounded-xl transition font-medium tracking-wide
+        ${recognitionActive
+                        ? 'bg-rose-600/90 hover:bg-rose-700 text-white'
+                        : 'bg-indigo-600/90 hover:bg-indigo-700 text-white'
+                      }`}
                   >
                     {recognitionActive ? 'Stop Recognition' : 'Start Recognition'}
                   </button>
                 </div>
-                
-                <div className="text-sm text-gray-600 mt-2">
+
+                {/* Status */}
+                <div className="text-sm text-white/60 mt-3 text-center">
                   {recognitionActive ? (
                     <p>Status: Real-time recognition active</p>
                   ) : (
@@ -389,10 +404,11 @@ export default function FaceAttendance() {
                   )}
                 </div>
               </div>
-              
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-800 mb-2">Instructions:</h3>
-                <ul className="text-sm text-blue-700 space-y-1">
+
+              {/* Instructions */}
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-2xl">
+                <h3 className="font-semibold text-white mb-3 tracking-wide">Instructions</h3>
+                <ul className="text-sm text-white/70 space-y-2">
                   <li>• Position your face within the frame</li>
                   <li>• Ensure good lighting on your face</li>
                   <li>• Look directly at the camera</li>
@@ -401,12 +417,13 @@ export default function FaceAttendance() {
                 </ul>
               </div>
             </div>
-            
+
+
             {/* Result Section */}
             <div className="space-y-6">
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <h2 className="text-xl font-semibold mb-4">Attendance Status</h2>
-                
+
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-green-100 p-3 rounded-lg">
                     <p className="text-green-800 font-medium">Punch In: {attendanceStatus.punchIn || 'Not recorded'}</p>
@@ -415,25 +432,25 @@ export default function FaceAttendance() {
                     <p className="text-red-800 font-medium">Punch Out: {attendanceStatus.punchOut || 'Not recorded'}</p>
                   </div>
                 </div>
-                
+
                 {message && (
                   <div className="p-4 bg-green-100 text-green-700 rounded-lg mb-4">
                     {message}
                   </div>
                 )}
-                
+
                 {error && (
                   <div className="p-4 bg-red-100 text-red-700 rounded-lg mb-4">
                     {error}
                   </div>
                 )}
-                
+
                 {detectedPerson && (
                   <div className={`bg-white p-4 rounded-lg border ${detectedPerson.unknown ? 'border-red-200' : detectedPerson.multiple ? 'border-yellow-200' : 'border-green-200'}`}>
                     <h3 className="font-semibold mb-2">
-                      {detectedPerson.multiple ? 'Multiple Faces Detected!' : 
-                       detectedPerson.unknown ? 'Unknown Person' : 
-                       'Recognized User'}
+                      {detectedPerson.multiple ? 'Multiple Faces Detected!' :
+                        detectedPerson.unknown ? 'Unknown Person' :
+                          'Recognized User'}
                     </h3>
                     <div className="space-y-2">
                       <p><span className="font-medium">Name:</span> {detectedPerson.name}</p>
@@ -449,7 +466,7 @@ export default function FaceAttendance() {
                     </div>
                   </div>
                 )}
-                
+
                 {attendanceResult && (
                   <div className="bg-white p-4 rounded-lg border border-green-200 mt-4">
                     <h3 className="font-semibold text-green-800 mb-2">Attendance Confirmed!</h3>
@@ -462,7 +479,7 @@ export default function FaceAttendance() {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="mt-6">
                   <h3 className="font-semibold text-gray-800 mb-2">How It Works:</h3>
                   <div className="space-y-3">
@@ -472,14 +489,14 @@ export default function FaceAttendance() {
                       </div>
                       <p className="text-gray-600">Position your face in front of the camera</p>
                     </div>
-                    
+
                     <div className="flex items-start">
                       <div className="bg-indigo-100 text-indigo-800 rounded-full p-2 mr-3">
                         <span className="font-bold">2</span>
                       </div>
                       <p className="text-gray-600">Click "Punch In" or "Punch Out" button</p>
                     </div>
-                    
+
                     <div className="flex items-start">
                       <div className="bg-indigo-100 text-indigo-800 rounded-full p-2 mr-3">
                         <span className="font-bold">3</span>
@@ -489,7 +506,7 @@ export default function FaceAttendance() {
                   </div>
                 </div>
               </div>
-              
+
               {user && (
                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                   <h3 className="font-semibold text-purple-800 mb-2">Your Profile</h3>
@@ -505,13 +522,13 @@ export default function FaceAttendance() {
           </div>
         </div>
       </div>
-      
+
       {/* Verification Dialog */}
       {showVerificationDialog && verificationData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Verify Attendance</h3>
-            
+
             <div className="mb-6">
               <div className="bg-gray-100 p-4 rounded-lg">
                 <h4 className="font-semibold text-gray-700 mb-2">Employee Information</h4>
@@ -523,14 +540,13 @@ export default function FaceAttendance() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex space-x-3">
               <button
                 onClick={confirmAttendance}
                 disabled={loading}
-                className={`flex-1 py-3 rounded transition font-medium flex items-center justify-center bg-green-600 hover:bg-green-700 text-white ${
-                  loading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`flex-1 py-3 rounded transition font-medium flex items-center justify-center bg-green-600 hover:bg-green-700 text-white ${loading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 <FaCheck className="mr-2" />
                 Confirm
@@ -538,9 +554,8 @@ export default function FaceAttendance() {
               <button
                 onClick={cancelAttendance}
                 disabled={loading}
-                className={`flex-1 py-3 rounded transition font-medium flex items-center justify-center bg-red-600 hover:bg-red-700 text-white ${
-                  loading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`flex-1 py-3 rounded transition font-medium flex items-center justify-center bg-red-600 hover:bg-red-700 text-white ${loading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 <FaTimes className="mr-2" />
                 Retake
@@ -549,7 +564,7 @@ export default function FaceAttendance() {
           </div>
         </div>
       )}
-      
+
       {/* Hidden canvas */}
       <canvas ref={canvasRef} className="hidden" />
     </div>

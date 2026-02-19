@@ -300,7 +300,7 @@ export default function EnhancedDashboard() {
       setLoading(false);
     }
   };
-  
+
   // For last updating time
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
@@ -375,7 +375,7 @@ export default function EnhancedDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-[#ffffff] to-[#ddddff]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -409,25 +409,26 @@ export default function EnhancedDashboard() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40"
+        className="bg-[#6366F1] border-b border-gray-200 shadow-sm sticky top-0 z-40"
         style={{ fontFamily: 'Arial, sans-serif' }}
       >
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 bg-[#03103b]">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Attendance Dashboard</h1>
-              <p className="text-gray-900 text-xs">Welcome {user?.name || 'Admin'}!</p>
+              <h1 className="text-[5.2vw] lg:text-[2vw] font-extrabold mb-6  text-[#ffffff] ">Attendance Dashboard</h1>
+              <p className="text-[#e6e7e9] text-sm">Welcome {user?.name || 'Admin'}!</p>
             </div>
             <div className="flex flex-col items-end">
-              <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+              <div className="text-xs text-gray-900 bg-gray-50 my-3 px-4 py-1 rounded">
                 {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-xs text-gray-600">
-                  {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </span>
+              <div className="flex flex-col items-center  justify-between gap-0.5 mt-1.5">
+
                 <span className="text-xs font-bold text-gray-900">
                   {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+                </span>
+                <span className="text-xs text-gray-600">
+                  {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
             </div>
@@ -446,9 +447,9 @@ export default function EnhancedDashboard() {
             className="glass-effect rounded-lg p-4 hover-lift"
             style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between bg-blue-100 border border-blue-600 rounded-md p-2">
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Total Employees</p>
+                <p className="text-xs font-semibold text-gray-900 uppercase tracking-wide whitespace-nowrap">Total Employees</p>
                 <motion.p
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -458,14 +459,14 @@ export default function EnhancedDashboard() {
                   {stats.totalEmployees}
                 </motion.p>
               </div>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-blue-300 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
             </div>
             <div className="pt-3 border-t border-gray-100 mt-2">
-              <span className="inline-flex items-center text-xs text-gray-500">
+              <span className="inline-flex items-center text-xs text-blue-500 font-bold">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5"></span>
                 All active employees
               </span>
@@ -481,9 +482,9 @@ export default function EnhancedDashboard() {
             className="glass-effect rounded-lg p-4 hover-lift"
             style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between bg-green-100 border border-green-500 rounded-md p-2">
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Present Today</p>
+                <p className="text-xs font-semibold text-gray-900 uppercase tracking-wide whitespace-nowrap">Present Today</p>
                 <motion.p
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -493,14 +494,14 @@ export default function EnhancedDashboard() {
                   {stats.todayPresent}
                 </motion.p>
               </div>
-              <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-green-300 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
             <div className="pt-3 border-t border-gray-100 mt-2">
-              <span className="inline-flex items-center text-xs font-semibold text-emerald-600">
+              <span className="inline-flex items-center text-xs  text-emerald-600 font-bold">
                 <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
@@ -518,9 +519,9 @@ export default function EnhancedDashboard() {
             className="glass-effect rounded-lg p-4 hover-lift"
             style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between bg-red-100 border border-red-600 rounded-md p-2">
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">On Leave Today</p>
+                <p className="text-xs font-semibold text-gray-900 uppercase tracking-wide whitespace-nowrap">On Leave Today</p>
                 <motion.p
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -530,14 +531,14 @@ export default function EnhancedDashboard() {
                   {stats.todayAbsent}
                 </motion.p>
               </div>
-              <div className="w-10 h-10 bg-rose-50 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-rose-300 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
             <div className="pt-3 border-t border-gray-100 mt-2">
-              <span className="inline-flex items-center text-xs text-gray-500">
+              <span className="inline-flex items-center text-xs text-red-500 font-bold">
                 <span className="w-1.5 h-1.5 bg-rose-500 rounded-full mr-1.5"></span>
                 Requires attention
               </span>
@@ -553,14 +554,14 @@ export default function EnhancedDashboard() {
             className="glass-effect rounded-lg p-4 hover-lift"
             style={{ fontFamily: 'Arial, sans-serif' }}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between bg-amber-100 border border-amber-500 rounded-md   p-2">
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Attendance Rate</p>
+                <p className="text-xs font-semibold text-gray-900 uppercase tracking-wide whitespace-nowrap">Attendance Rate</p>
                 <motion.p
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.6 }}
-                  className="text-xl font-bold text-blue-600 mt-1"
+                  className="text-xl font-bold text-amber-600 mt-1"
                 >
                   {attendanceRate}%
                 </motion.p>
@@ -589,8 +590,8 @@ export default function EnhancedDashboard() {
                 </span>
               </div>
             </div>
-            <div className="pt-3 border-t border-gray-100 mt-2">
-              <span className="text-xs text-gray-500">Overall Performance</span>
+            <div className="pt-3 border-t border-gray-100 mt-2 font-bold">
+              <span className="text-xs text-amber-500">Overall Performance</span>
             </div>
           </motion.div>
 
@@ -604,11 +605,11 @@ export default function EnhancedDashboard() {
             style={{ fontFamily: 'Arial, sans-serif' }}
           >
             <h3 className="text-sm font-bold text-gray-900 mb-3">Quick Actions</h3>
-            <div className="space-y-2">
+            <div className="space-y-2 ">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-between p-2 bg-blue-100 hover:bg-blue-200 rounded-lg smooth-transition group"
+                className="w-full flex items-center justify-between p-2 bg-[#22C55E] hover:bg-[#82ffb0] rounded-lg smooth-transition group"
               >
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-blue-200 rounded flex items-center justify-center group-hover:bg-blue-300 flex-shrink-0">
@@ -616,7 +617,7 @@ export default function EnhancedDashboard() {
                       <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-gray-900 whitespace-nowrap">Add Employee</span>
+                  <span className="text-xs font-semibold text-gray-900 p-2 whitespace-nowrap">Add Employee</span>
                 </div>
                 <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M9 5l7 7-7 7" />
@@ -626,7 +627,7 @@ export default function EnhancedDashboard() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-between p-2 bg-gray-50 hover:bg-gray-100 rounded-lg smooth-transition group"
+                className="w-full flex items-center justify-between p-2 bg-[#8B5CF6] hover:bg-[#b694ff] hover:text-white rounded-lg smooth-transition group"
               >
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center group-hover:bg-gray-200 flex-shrink-0">
@@ -634,7 +635,7 @@ export default function EnhancedDashboard() {
                       <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-gray-900 whitespace-nowrap">Generate Reports</span>
+                  <span className="text-xs font-semibold text-gray-900 p-2 whitespace-nowrap">Generate Reports</span>
                 </div>
                 <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M9 5l7 7-7 7" />
@@ -655,15 +656,15 @@ export default function EnhancedDashboard() {
           >
 
 
-            <div className="glass-effect rounded-lg p-3 mb-4">
+            <div className="glass-effect rounded-lg p-4 mb-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-semibold text-gray-900">Attendance Records</h2>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-gray-700">Filter:</span>
+                  <span className="text-sm font-semibold text-gray-900">Filter:</span>
                   <select
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
-                    className="bg-white border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent min-w-[100px]"
+                    className="bg-blue-100 border border-gray-900 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent min-w-[100px]"
                   >
                     <option value="today">Today</option>
                     <option value="yesterday">Yesterday</option>
@@ -709,7 +710,7 @@ export default function EnhancedDashboard() {
               {/* Search Bar */}
               <div className="mb-3">
                 <div className="relative">
-                  <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
@@ -735,11 +736,11 @@ export default function EnhancedDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Employee</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                    <tr className="bg-blue-900 border-b border-gray-200">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-50 uppercase tracking-wider">Employee</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-50 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-50 uppercase tracking-wider">Time</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-50 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -765,7 +766,7 @@ export default function EnhancedDashboard() {
                                 >
                                   {record.name}
                                 </button>
-                                <p className="text-xs text-gray-500 mt-0.5">{record.email}</p>
+                                <p className="text-xs text-gray-900 mt-0.5">{record.email}</p>
                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                                   <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
                                     {record.shift}
@@ -866,7 +867,7 @@ export default function EnhancedDashboard() {
 
 
 
-            
+
           </motion.div>
 
           {/* Summary Sidebar */}
@@ -877,23 +878,27 @@ export default function EnhancedDashboard() {
             className="space-y-4"
           >
             {/* Summary Card */}
-            <div className="glass-effect rounded-lg p-3">
-              <h3 className="text-base font-bold text-gray-900 mb-3">Summary</h3>
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Total Records</span>
-                  <span className="text-xs font-semibold text-gray-900">{attendanceData.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Showing</span>
-                  <span className="text-xs font-semibold text-gray-900">{filteredData.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Filter Applied</span>
-                  <span className="text-xs font-semibold text-gray-900 capitalize">{filter}</span>
+            <div className="glass-effect rounded-lg p-4 h-[32.8vh] flex flex-col justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 mb-3">Summary</h3>
+
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">Total Records</span>
+                    <span className="text-xs font-semibold text-gray-900">{attendanceData.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">Showing</span>
+                    <span className="text-xs font-semibold text-gray-900">{filteredData.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">Filter Applied</span>
+                    <span className="text-xs font-semibold text-gray-900 capitalize">{filter}</span>
+                  </div>
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-gray-100">
+
+              <div className="pt-3 border-t border-gray-100">
                 <div className="text-center">
                   <p className="text-xs text-gray-600 mb-1">Data last updated</p>
                   <p className="text-xs font-semibold text-gray-900">
@@ -903,8 +908,9 @@ export default function EnhancedDashboard() {
               </div>
             </div>
 
+
             {/* Status Distribution Card */}
-            <div className="glass-effect rounded-lg p-3">
+            <div className="glass-effect rounded-lg p-3 h-[18vh] flex flex-col justify-between">
               <h3 className="text-base font-bold text-gray-900 mb-3">Status Distribution</h3>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -944,7 +950,7 @@ export default function EnhancedDashboard() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.8 }}
-          className="text-center text-sm text-gray-500 pt-6 border-t border-gray-200"
+          className="text-center text-sm text-gray-500 pt-6 border-t border-gray-200 bg-slate-200 p-5 rounded-md"
         >
           <div className="flex items-center justify-between">
             <span>Showing {filteredData.length} of {attendanceData.length} records</span>
