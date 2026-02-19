@@ -142,11 +142,11 @@ export default function Navbar() {
       >
         <div className="px-6 py-5 border-b border-slate-800 flex justify-between items-center">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-lg bg-blue-900 text-white flex items-center justify-center ">
               FAS
             </div>
             <div>
-              <div className="font-semibold leading-tight">Face Attendance</div>
+              <div className="font-semibold leading-tight ">Face Attendance</div>
               <div className="text-xs text-slate-400">Management System</div>
             </div>
           </Link>
@@ -202,11 +202,11 @@ export default function Navbar() {
             </button>
 
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-blue-700 text-white flex items-center justify-center font-bold text-lg">
+              <div className="w-11 h-11 rounded-xl border border-blue-950 text-blue-950  flex items-center justify-center font-bold text-lg">
                 FAS
               </div>
               <div className="hidden sm:block">
-                <div className="text-lg font-semibold text-slate-900">
+                <div className="text-lg font-bold text-slate-900">
                   Face Attendance System
                 </div>
                 <div className="text-xs text-slate-500">
@@ -245,13 +245,13 @@ export default function Navbar() {
               <>
                 <Link
                   to="/login"
-                  className="text-slate-700 hover:text-slate-900 font-medium"
+                  className="text-blue-950 border border-blue-950 px-5 py-2 rounded-md hover:text-slate-900 hover:bg-blue-950 hover:text-blue-50 font-medium"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
-                  className="px-5 py-2.5 rounded-md bg-blue-700 hover:bg-blue-800 text-white font-medium transition"
+                  className="px-5 py-2.5 rounded-md bg-blue-950 hover:bg-blue-50 hover:text-blue-950 hover:border-blue-950 hover:border text-white font-medium transition"
                 >
                   Register
                 </Link>

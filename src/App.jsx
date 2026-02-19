@@ -1,3 +1,4 @@
+
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
@@ -17,7 +18,6 @@ import EmployeeAttendanceDetail from './components/Dashboard/EmployeeAttendanceD
 import ShiftManagement from './components/Admin/ShiftManagement';
 import EmployeeManagement from './components/Admin/EmployeeManagement';
 import CompanyRegister from './components/Auth/CompanyRegister';
-
 // Custom protected route that checks user role
 const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, isAuthenticated } = useAuth();
@@ -38,7 +38,6 @@ const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
   
   return children;
 };
-
 // Main App wrapper with sidebar for authenticated users
 const AppWrapper = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
@@ -83,7 +82,6 @@ const AppWrapper = ({ children }) => {
     </div>
   );
 };
-
 // Public route that redirects to dashboard if authenticated
 const PublicRoute = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
@@ -94,7 +92,6 @@ const PublicRoute = ({ children }) => {
   
   return children;
 };
-
 function App() {
   return (
     <AuthProvider>
@@ -139,7 +136,7 @@ function App() {
             <ProtectedRoute>
               <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
                 <AppWrapper>
-                  <Dashboard />
+                  {/* <Dashboard /> */}
                 </AppWrapper>
               </RoleProtectedRoute>
             </ProtectedRoute>
@@ -250,5 +247,4 @@ function App() {
     </AuthProvider>
   );
 }
-
 export default App;

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG, { apiCall } from '../../config/api';
+import { Mail, Lock, UserCircle } from 'lucide-react';
+import gsap from 'gsap';
 
 export default function EmployeeLogin() {
   const [email, setEmail] = useState('');
@@ -10,6 +12,20 @@ export default function EmployeeLogin() {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const bgRef = useRef(null);
+
+  // 🎥 Subtle 3D floating background animation
+  useEffect(() => {
+    if (bgRef.current) {
+      gsap.to(bgRef.current, {
+        scale: 1.1,
+        duration: 20,
+        ease: "none",
+        repeat: -1,
+        yoyo: true
+      });
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,10 +36,8 @@ export default function EmployeeLogin() {
       const result = await login(email, password);
       
       if (result.success) {
-        // Since login updates auth context, we can check the user role from localStorage
         const token = localStorage.getItem('authToken');
         if (token) {
-          // Fetch user data to determine role
           const { response, data } = await apiCall(API_CONFIG.ENDPOINTS.ME, {
             method: 'GET',
           });
@@ -31,18 +45,14 @@ export default function EmployeeLogin() {
           if (response.ok && data.success && data.data) {
             const userRole = data.data.user.role;
             if (userRole === 'employee' || userRole === '3') {
-              // Redirect employee directly to face attendance
               navigate('/face-attendance');
             } else {
-              // For other roles, redirect to dashboard
               navigate('/dashboard');
             }
           } else {
-            // Default to dashboard if unable to fetch user data
             navigate('/dashboard');
           }
         } else {
-          // Default to dashboard if no token
           navigate('/dashboard');
         }
       } else {
@@ -56,28 +66,49 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+
+      {/* 🌆 Background Image */}
+      <div
+        ref={bgRef}
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=2070&auto=format&fit=crop')"
+        }}
+      />
+
+      {/* 🎨 Gradient Overlay */}
+      {/* <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-indigo-950/80 to-slate-900/90 backdrop-blur-[2px]" /> */}
+
+      {/* 🔤 Giant Background Text */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+        <h1 className="text-[14vw] font-black uppercase tracking-widest text-white/5">
+          Employee
+        </h1>
+      </div>
+
+      {/* 🔑 Login Card */}
+      <div className="relative z-10 bg-white/95 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/20 m-4">
         <div className="text-center mb-8">
-          <div className="mx-auto bg-indigo-600 text-white w-16 h-16 rounded-full flex items-center justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+          <div className="mx-auto bg-blue-950 text-white w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-lg">
+            <UserCircle size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">Employee Login</h1>
-          <p className="text-gray-600 mt-2">Face Attendance System</p>
+          <h1 className="text-3xl font-bold text-slate-800">Employee Login</h1>
+          <p className="text-slate-500 mt-2">Face Attendance System</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address testinggggg
+            <label htmlFor="email" className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <Mail size={16}/> Email Address testinggggg
             </label>
             <input
               id="email"
@@ -85,14 +116,15 @@ export default function EmployeeLogin() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               placeholder="Enter your email"
             />
           </div>
 
+          {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
+            <label htmlFor="password" className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <Lock size={16}/> Password
             </label>
             <input
               id="password"
@@ -100,7 +132,7 @@ export default function EmployeeLogin() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               placeholder="Enter your password"
             />
           </div>
@@ -108,7 +140,7 @@ export default function EmployeeLogin() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ${
+            className={`w-full bg-blue-950 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ${
               loading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >

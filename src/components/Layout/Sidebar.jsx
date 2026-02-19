@@ -109,7 +109,7 @@ const Sidebar = ({ user }) => {
 
       {/* Sidebar */}
       <div 
-        className={`fixed top-0 left-0 h-full bg-gray-800 text-white w-64 transform transition-transform duration-300 ease-in-out z-50
+        className={`fixed top-0 left-0 h-full bg-[#03103b] text-white w-64 transform transition-transform duration-300 ease-in-out z-50
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
       >
         <div className="p-4 border-b border-gray-700">
@@ -126,8 +126,8 @@ const Sidebar = ({ user }) => {
                   onClick={closeSidebar}
                   className={`flex items-center px-6 py-3 text-sm transition-colors duration-200 ${
                     isActive(item.path)
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      ? 'bg-blue-900 text-white'
+                      : 'text-gray-300 hover:bg-blue-50 hover:text-blue-950'
                   }`}
                 >
                   <span className="mr-3">{item.icon}</span>
