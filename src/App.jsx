@@ -1,5 +1,6 @@
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useLocation } from "react-router-dom";                         
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 import FaceAttendance from "./components/Face/FaceAttendance";
@@ -18,70 +19,80 @@ import EmployeeAttendanceDetail from './components/Dashboard/EmployeeAttendanceD
 import ShiftManagement from './components/Admin/ShiftManagement';
 import EmployeeManagement from './components/Admin/EmployeeManagement';
 import CompanyRegister from './components/Auth/CompanyRegister';
+import EnhancedDashboard from './components/Dashboard/EnhancedDashboard';
+import Profile from './components/Profile/Profile'
+import Settings from './components/Profile/Settings';
+
+
 // Custom protected route that checks user role
 const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { user, isAuthenticated } = useAuth();
-  
+  const { user, isAuthenticated, loading } = useAuth();
+
+  // console.log("RoleGuard:", { loading, isAuthenticated, user });
+
+  // ⛔ Wait until auth finishes loading
+  if (loading) return null;
+
+  // ⛔ Not logged in
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
-  
-  // For role restrictions
-  if (user && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    // If user is not in allowed roles, redirect to their default page
-    if (user.role === 'employee') {
-      return <Navigate to="/face-attendance" />;
-    } else {
-      return <Navigate to="/dashboard" />;
-    }
-  }
-  
-  return children;
-};
-// Main App wrapper with sidebar for authenticated users
-const AppWrapper = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-  if (!isAuthenticated) {
-    return <>{children}</>;
-  }
-  
-  // For employee role, hide sidebar completely
-  if (user?.role === 'employee') {
-    // Redirect if trying to access non-allowed pages
-    const isAllowedPage = window.location.pathname === '/face-attendance' || window.location.pathname === '/face-registration';
-    
-    if (!isAllowedPage) {
-      // For non-allowed pages, redirect to face attendance
+
+  // ⛔ User not loaded yet
+  if (!user) return null;
+
+  // ⛔ Role restriction
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    console.warn("Access denied for role:", user.role);
+
+    if (user.role === "employee") {
       return <Navigate to="/face-attendance" replace />;
     }
-    
+
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
+// Main App wrapper with sidebar for authenticated users
+const AppWrapper = ({ children }) => {
+  const { user, isAuthenticated, loading } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+
+  // console.log("AppWrapper mounted", { loading, isAuthenticated, user });
+
+  if (loading) return null;
+
+  if (!isAuthenticated) return <>{children}</>;
+
+  // ✅ Employee layout
+  if (user?.role === "employee") {
     return (
       <div className="flex">
-        {/* No sidebar for employees */}
         <div className="flex-1">
-          {/* No navbar for employees if you want to hide it completely */}
-          <main className="p-4">
-            {children}
-          </main>
+          <main className="p-4">{children}</main>
         </div>
       </div>
     );
   }
-  
+
+  // ✅ Admin / Superadmin layout
   return (
     <div className="flex">
-      <Sidebar user={user} isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <Sidebar
+        user={user}
+        isOpen={sidebarOpen}
+        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+      />
       <div className="flex-1 lg:ml-64">
         <Navbar />
-        <main className="p-4">
-          {children}
-        </main>
+        <main className="p-4">{children}</main>
       </div>
     </div>
   );
-};
+}; 
 // Public route that redirects to dashboard if authenticated
 const PublicRoute = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
@@ -116,7 +127,7 @@ function App() {
           
           <Route path="/company-register" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['superadmin']}>
+              <RoleProtectedRoute allowedRoles={['superadmin', 'user']}>
                 <AppWrapper>
                   <CompanyRegister />
                 </AppWrapper>
@@ -134,9 +145,10 @@ function App() {
           {/* Routes that require authentication */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee','user']}>
                 <AppWrapper>
-                  {/* <Dashboard /> */}
+                  {/* <Dashboard />  */}
+                  <EnhancedDashboard/>
                 </AppWrapper>
               </RoleProtectedRoute>
             </ProtectedRoute>
@@ -144,7 +156,7 @@ function App() {
           
           <Route path="/face-attendance" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee' , 'user']}>
                 <AppWrapper>
                   <FaceAttendance />
                 </AppWrapper>
@@ -154,7 +166,7 @@ function App() {
           
           <Route path="/admin-dashboard" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'user']}>
                 <AppWrapper>
                   <AdminDashboard />
                 </AppWrapper>
@@ -164,7 +176,7 @@ function App() {
           
           <Route path="/face-registration" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee', 'user']}>
                 <AppWrapper>
                   <FaceRegistration />
                 </AppWrapper>
@@ -184,7 +196,7 @@ function App() {
           
           <Route path="/employee/:userId" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'user']}>
                 <AppWrapper>
                   <EmployeeAttendanceDetail />
                 </AppWrapper>
@@ -194,7 +206,7 @@ function App() {
           
           <Route path="/shifts" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'user']}>
                 <AppWrapper>
                   <ShiftManagement />
                 </AppWrapper>
@@ -204,7 +216,7 @@ function App() {
           
           <Route path="/employees" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'user']}>
                 <AppWrapper>
                   <EmployeeManagement />
                 </AppWrapper>
@@ -215,7 +227,7 @@ function App() {
           {/* Default route - redirect based on user role */}
           <Route path="/" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee', 'user']}>
                 <AppWrapper>
                   <Dashboard />
                 </AppWrapper>
@@ -225,9 +237,9 @@ function App() {
           
           <Route path="/settings" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'user']}>
                 <AppWrapper>
-                  <div>Settings Page</div>
+                  <Settings/>
                 </AppWrapper>
               </RoleProtectedRoute>
             </ProtectedRoute>
@@ -235,9 +247,9 @@ function App() {
           
           <Route path="/profile" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'user']}>
                 <AppWrapper>
-                  <div>Profile Page</div>
+                  <Profile/>
                 </AppWrapper>
               </RoleProtectedRoute>
             </ProtectedRoute>

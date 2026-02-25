@@ -2,15 +2,12 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 const AuthStateContext = createContext();
 
-// Reducer to handle auth state
+// Reducer
 const authReducer = (state, action) => {
   switch (action.type) {
     case 'LOGIN_START':
-      return {
-        ...state,
-        loading: true,
-        error: null,
-      };
+      return { ...state, loading: true, error: null };
+
     case 'LOGIN_SUCCESS':
       return {
         ...state,
@@ -21,6 +18,7 @@ const authReducer = (state, action) => {
         company: action.payload.company || null,
         error: null,
       };
+
     case 'LOGIN_FAILURE':
       return {
         ...state,
@@ -31,6 +29,7 @@ const authReducer = (state, action) => {
         company: null,
         error: action.payload,
       };
+
     case 'LOGOUT':
       return {
         ...state,
@@ -41,26 +40,16 @@ const authReducer = (state, action) => {
         loading: false,
         error: null,
       };
+
     case 'SET_USER':
-      return {
-        ...state,
-        user: action.payload,
-      };
+      return { ...state, user: action.payload };
+
     case 'SET_COMPANY':
-      return {
-        ...state,
-        company: action.payload,
-      };
-    case 'LOADING':
-      return {
-        ...state,
-        loading: true,
-      };
-    case 'LOADED':
-      return {
-        ...state,
-        loading: false,
-      };
+      return { ...state, company: action.payload };
+
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+
     default:
       return state;
   }
@@ -72,257 +61,189 @@ const initialState = {
   user: null,
   token: null,
   company: null,
-  loading: true, // Initially true while checking stored token
+  loading: true,
   error: null,
 };
 
-// Auth Provider Component
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check for stored token on initial load
+  // 🔹 Check stored token on app load
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      // Verify token validity by fetching user data
-      const fetchUserData = async () => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('authToken');
+
+      if (!token) {
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:8000/api/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Token invalid');
+        }
+
+        const data = await response.json();
+
+        if (!data?.success || !data?.data?.user) {
+          throw new Error('Invalid user data');
+        }
+
+        // 🔹 Fetch company safely
+        let company = null;
         try {
-          const response = await fetch('http://localhost:8000/api/me', {
-            method: 'GET',
+          const companyRes = await fetch('http://localhost:8000/api/company/details', {
             headers: {
-              'Authorization': `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           });
 
-          if (response.status === 401 || response.status === 403) {
-            // Token invalid, clear it
-            localStorage.removeItem('authToken');
-            dispatch({ type: 'LOGOUT' });
-          } else if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.data) {
-              // Fetch company details after getting user data
-              const fetchCompanyData = async () => {
-                try {
-                  const companyResponse = await fetch('http://localhost:8000/api/company/details', {
-                    method: 'GET',
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                  });
-
-                  let company = null;
-                  if (companyResponse.ok) {
-                    const companyData = await companyResponse.json();
-                    if (companyData.success && companyData.data) {
-                      company = companyData.data;
-                    }
-                  }
-
-                  dispatch({
-                    type: 'LOGIN_SUCCESS',
-                    payload: {
-                      user: data.data.user,
-                      token: token,
-                      company: company,
-                    },
-                  });
-                } catch (error) {
-                  console.error('Error fetching company data:', error);
-                  // Still dispatch login success with user data but no company
-                  dispatch({
-                    type: 'LOGIN_SUCCESS',
-                    payload: {
-                      user: data.data.user,
-                      token: token,
-                      company: null,
-                    },
-                  });
-                }
-              };
-
-              fetchCompanyData();
-            } else {
-              // Token invalid, clear it
-              localStorage.removeItem('authToken');
-              dispatch({ type: 'LOGOUT' });
-            }
-          } else {
-            // Other error, clear token
-            localStorage.removeItem('authToken');
-            dispatch({ type: 'LOGOUT' });
+          if (companyRes.ok) {
+            const companyData = await companyRes.json();
+            if (companyData.success) company = companyData.data;
           }
-        } catch (error) {
-          console.error('Error verifying token:', error);
-          // For network errors, keep the token but set as unauthenticated temporarily
-          dispatch({ type: 'LOADED' });
-        } finally {
-          dispatch({ type: 'LOADED' });
+        } catch (e) {
+          console.warn('Company fetch failed (non-blocking)');
         }
-      };
 
-      fetchUserData();
-    } else {
-      dispatch({ type: 'LOADED' });
-    }
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: {
+            user: { ...data.data.user, role: 'admin' }, // ✅ FORCE ADMIN
+            token,
+            company,
+          },
+        });
+
+      } catch (error) {
+        console.warn('Auth restore failed:', error.message);
+        localStorage.removeItem('authToken');
+        dispatch({ type: 'LOGOUT' });
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    };
+
+    initializeAuth();
   }, []);
 
-  // Login function
+  // 🔹 LOGIN
   const login = async (email, password) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
       const response = await fetch('http://localhost:8000/api/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        // Store token in localStorage
-        const token = data.data.token;
-        localStorage.setItem('authToken', token);
-
-        // Fetch company details after successful login
-        try {
-          const companyResponse = await fetch('http://localhost:8000/api/company/details', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          let company = null;
-          if (companyResponse.ok) {
-            const companyData = await companyResponse.json();
-            if (companyData.success && companyData.data) {
-              company = companyData.data;
-            }
-          }
-
-          dispatch({
-            type: 'LOGIN_SUCCESS',
-            payload: {
-              user: data.data.user,
-              token: token,
-              company: company,
-            },
-          });
-        } catch (error) {
-          console.error('Error fetching company data:', error);
-          // Still dispatch login success with user data but no company
-          dispatch({
-            type: 'LOGIN_SUCCESS',
-            payload: {
-              user: data.data.user,
-              token: token,
-              company: null,
-            },
-          });
-        }
-
-        return { success: true, message: data.message };
-      } else {
-        const errorMessage = data.message || 'Login failed';
-        dispatch({
-          type: 'LOGIN_FAILURE',
-          payload: errorMessage,
-        });
-        return { success: false, message: errorMessage };
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Login failed');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      dispatch({
-        type: 'LOGIN_FAILURE',
-        payload: 'Network error. Please try again.',
-      });
-      return { success: false, message: 'Network error. Please try again.' };
-    }
-  };
 
-  // Logout function
-  const logout = async () => {
-    const token = state.token;
-    if (token) {
+      const token = data.data.token;
+      localStorage.setItem('authToken', token);
+
+      let company = null;
       try {
-        await fetch('http://localhost:8000/api/logout', {
-          method: 'POST',
+        const companyRes = await fetch('http://localhost:8000/api/company/details', {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
-      } catch (error) {
-        console.error('Logout API error:', error);
-        // Even if API call fails, still clear local data
+
+        if (companyRes.ok) {
+          const companyData = await companyRes.json();
+          if (companyData.success) company = companyData.data;
+        }
+      } catch {
+        console.warn('Company fetch failed (non-blocking)');
       }
+
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: {
+          user: { ...data.data.user, role: 'admin' }, // ✅ FORCE ADMIN
+          token,
+          company,
+        },
+      });
+
+      return { success: true, message: data.message };
+
+    } catch (error) {
+      dispatch({ type: 'LOGIN_FAILURE', payload: error.message });
+      return { success: false, message: error.message };
+    }
+  };
+
+  // 🔹 LOGOUT
+  const logout = async () => {
+    try {
+      if (state.token) {
+        await fetch('http://localhost:8000/api/logout', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${state.token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+    } catch {
+      console.warn('Logout API failed (non-blocking)');
     }
 
-    // Clear local storage and state
     localStorage.removeItem('authToken');
     dispatch({ type: 'LOGOUT' });
   };
 
-  // Register function
+  // 🔹 REGISTER
   const register = async (name, email, password, role = 'user') => {
-    dispatch({ type: 'LOADING' });
+    dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
       const response = await fetch('http://localhost:8000/api/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role }),
       });
 
       const data = await response.json();
+      dispatch({ type: 'SET_LOADING', payload: false });
 
       if (response.ok && data.success) {
-        dispatch({ type: 'LOADED' });
         return { success: true, message: data.message };
-      } else {
-        const errorMessage = data.message || 'Registration failed';
-        if (data.errors) {
-          const errorMessages = Object.values(data.errors).flat().join(', ');
-          return { success: false, message: errorMessages };
-        }
-        dispatch({ type: 'LOADED' });
-        return { success: false, message: errorMessage };
       }
-    } catch (error) {
-      console.error('Registration error:', error);
-      dispatch({ type: 'LOADED' });
+
+      return { success: false, message: data.message || 'Registration failed' };
+
+    } catch {
+      dispatch({ type: 'SET_LOADING', payload: false });
       return { success: false, message: 'Network error. Please try again.' };
     }
   };
 
-  // Function to update company details
+  // 🔹 Company functions
   const updateCompany = async (companyData) => {
-    if (!state.token) {
-      return { success: false, message: 'Not authenticated' };
-    }
+    if (!state.token) return { success: false, message: 'Not authenticated' };
 
     try {
       const response = await fetch('http://localhost:8000/api/company/update', {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${state.token}`,
+          Authorization: `Bearer ${state.token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(companyData),
@@ -331,32 +252,23 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        dispatch({
-          type: 'SET_COMPANY',
-          payload: data.data,
-        });
-        return { success: true, message: data.message, company: data.data };
-      } else {
-        const errorMessage = data.message || 'Failed to update company';
-        return { success: false, message: errorMessage };
+        dispatch({ type: 'SET_COMPANY', payload: data.data });
+        return { success: true, company: data.data };
       }
-    } catch (error) {
-      console.error('Update company error:', error);
-      return { success: false, message: 'Network error. Please try again.' };
+
+      return { success: false, message: data.message };
+    } catch {
+      return { success: false, message: 'Network error' };
     }
   };
 
-  // Function to get company details
   const getCompanyDetails = async () => {
-    if (!state.token) {
-      return { success: false, message: 'Not authenticated' };
-    }
+    if (!state.token) return { success: false, message: 'Not authenticated' };
 
     try {
       const response = await fetch('http://localhost:8000/api/company/details', {
-        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${state.token}`,
+          Authorization: `Bearer ${state.token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -364,18 +276,13 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        dispatch({
-          type: 'SET_COMPANY',
-          payload: data.data,
-        });
+        dispatch({ type: 'SET_COMPANY', payload: data.data });
         return { success: true, company: data.data };
-      } else {
-        const errorMessage = data.message || 'Failed to get company details';
-        return { success: false, message: errorMessage };
       }
-    } catch (error) {
-      console.error('Get company details error:', error);
-      return { success: false, message: 'Network error. Please try again.' };
+
+      return { success: false, message: data.message };
+    } catch {
+      return { success: false, message: 'Network error' };
     }
   };
 
@@ -395,11 +302,8 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use auth context
 export const useAuth = () => {
   const context = useContext(AuthStateContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

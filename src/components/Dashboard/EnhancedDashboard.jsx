@@ -374,6 +374,8 @@ export default function EnhancedDashboard() {
     );
   }
 
+  // console.log("Dashboard mounted");
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#ffffff] to-[#ddddff]">
       <style>{`
@@ -424,7 +426,7 @@ export default function EnhancedDashboard() {
               </div>
               <div className="flex flex-col items-center  justify-between gap-0.5 mt-1.5">
 
-                <span className="text-xs font-bold text-gray-900">
+                <span className="text-xs font-bold text-gray-100">
                   {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                 </span>
                 <span className="text-xs text-gray-600">
