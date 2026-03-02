@@ -158,7 +158,7 @@ export default function Navbar() {
           </button>
         </div>
 
-        <nav className="px-4 py-6 space-y-1">
+        {/* <nav className="px-4 py-6 space-y-1">
           <Link
             to="/dashboard"
             onClick={() => setSidebarOpen(false)}
@@ -173,7 +173,7 @@ export default function Navbar() {
           >
             Attendance Records
           </Link>
-        </nav>
+        </nav> */}
 
         {isAuthenticated && (
           <div className="absolute bottom-0 w-full p-4 border-t border-slate-800">
@@ -192,14 +192,14 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           {/* Left */}
           <div className="flex items-center gap-5">
-            <button
+            {/* <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 rounded-md hover:bg-slate-100"
             >
               <svg className="w-7 h-7 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
-            </button>
+            </button> */}
 
             <Link to="/" className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-blue-700 text-white flex items-center justify-center font-bold text-lg">
