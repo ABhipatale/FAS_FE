@@ -956,6 +956,12 @@
 // }
 
 
+
+
+
+
+//new
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG, { apiCall } from '../../config/api';
@@ -1529,6 +1535,7 @@ export default function EnhancedDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.6 }}
               className="glass-effect rounded-xl overflow-hidden"
+              
             >
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -1540,108 +1547,106 @@ export default function EnhancedDashboard() {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-50 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    <AnimatePresence>
-                      {filteredData.map((record, index) => (
-                        <motion.tr
-                          key={record.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2, delay: index * 0.03 }}
-                          className="hover:bg-gray-50/50 smooth-transition"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm">
-                                {record.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <button
-                                  onClick={() => navigate(`/employee/${record.id}`)}
-                                  className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors text-left"
-                                >
-                                  {record.name}
-                                </button>
-                                <p className="text-xs text-gray-900 mt-0.5">{record.email}</p>
-                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                  <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
-                                    {record.shift}
-                                  </span>
-                                  <span className={`text-xs px-2 py-1 rounded-md ${record.faceRegistered
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : 'bg-rose-100 text-rose-700'
-                                    }`}>
-                                    {record.faceRegistered ? 'Face ID' : 'No Face ID'}
-                                  </span>
-                                  {record.lateMark && (
-                                    <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md font-semibold">
-                                      LATE
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1">
-                              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                                {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                              </span>
-                              {record.lateMark && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                                  {record.lateMark ? '30+ min late' : ''}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span className="text-sm font-medium text-gray-900">{record.punchIn || '--:--'}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span className="text-sm font-medium text-gray-900">{record.punchOut || '--:--'}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => navigate(`/employee/${record.id}`)}
-                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg smooth-transition"
-                                title="View Details"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                              </motion.button>
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => navigate(`/employee/${record.id}`)}
-                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg smooth-transition"
-                                title="Edit"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </motion.button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </AnimatePresence>
-                  </tbody>
+                  
+<tbody className="divide-y divide-gray-100">
+  <AnimatePresence>
+    {filteredData.map((record, index) => (
+      <motion.tr
+        key={record.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, delay: index * 0.03 }}
+        className="hover:bg-blue-50/40 transition-all duration-200"
+      >
+        {/* ✅ EMPLOYEE */}
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            {/* Avatar */}
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-semibold text-xs shadow-sm">
+              {record.name.charAt(0).toUpperCase()}
+            </div>
+
+            {/* Name + Shift (ONE LINE) */}
+            <button
+              onClick={() => navigate(`/employee/${record.id}`)}
+              className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors whitespace-nowrap"
+            >
+              {record.name}
+              <span className="text-gray-500 font-normal ml-1">
+                ({record.shift})
+              </span>
+            </button>
+          </div>
+        </td>
+
+        {/* ✅ STATUS */}
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${getStatusColor(
+                record.status
+              )}`}
+            >
+              {record.status}
+            </span>
+
+            {record.lateMark && (
+              <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-red-100 text-red-700">
+                30m late
+              </span>
+            )}
+          </div>
+        </td>
+
+        {/* ✅ TIME */}
+        <td className="px-4 py-3">
+          <div className="text-xs text-gray-700 font-medium whitespace-nowrap">
+            {record.punchIn || "--:--"} — {record.punchOut || "--:--"}
+          </div>
+        </td>
+
+        {/* ✅ ACTIONS */}
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-1">
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate(`/employee/${record.id}`)}
+              className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-100 rounded-md transition"
+              title="View"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5
+                     c4.478 0 8.268 2.943 9.542 7
+                     -1.274 4.057-5.064 7-9.542 7
+                     -4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate(`/employee/${record.id}`)}
+              className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-100 rounded-md transition"
+              title="Edit"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
+                     m-1.414-9.414a2 2 0 112.828 2.828
+                     L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </motion.button>
+          </div>
+        </td>
+      </motion.tr>
+    ))}
+  </AnimatePresence>
+</tbody>
                 </table>
 
                 {filteredData.length === 0 && (
@@ -1668,78 +1673,109 @@ export default function EnhancedDashboard() {
           </motion.div>
 
           {/* Summary Sidebar */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.6 }}
-            className="space-y-4"
-          >
-            {/* Summary Card */}
-            <div className="glass-effect rounded-lg p-4 h-[32.8vh] flex flex-col justify-between">
-              <div>
-                <h3 className="text-base font-bold text-gray-900 mb-3">Summary</h3>
+         <motion.div
+  initial={{ opacity: 0, x: 20 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ duration: 0.3, delay: 0.6 }}
+  className="space-y-4"
+>
+  <div className="relative overflow-hidden rounded-2xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg p-4">
 
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-600">Total Records</span>
-                    <span className="text-xs font-semibold text-gray-900">{attendanceData.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-600">Showing</span>
-                    <span className="text-xs font-semibold text-gray-900">{filteredData.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-600">Filter Applied</span>
-                    <span className="text-xs font-semibold text-gray-900 capitalize">{filter}</span>
-                  </div>
-                </div>
-              </div>
+    {/* 🔹 Header */}
+    <div className="flex items-center justify-between mb-4">
+      <h3 className="text-sm font-bold text-gray-900 tracking-wide">
+        Status Distribution
+      </h3>
 
-              <div className="pt-3 border-t border-gray-100">
-                <div className="text-center">
-                  <p className="text-xs text-gray-600 mb-1">Data last updated</p>
-                  <p className="text-xs font-semibold text-gray-900">
-                    {lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              </div>
-            </div>
+      <span className="text-[10px] px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold capitalize">
+        {filter}
+      </span>
+    </div>
 
+    {/* 🔹 Stats */}
+    <div className="space-y-3">
 
-            {/* Status Distribution Card */}
-            <div className="glass-effect rounded-lg p-3 h-[18vh] flex flex-col justify-between">
-              <h3 className="text-base font-bold text-gray-900 mb-3">Status Distribution</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                    <span className="text-xs text-gray-600">Present</span>
-                  </div>
-                  <span className="text-xs font-semibold text-gray-900">
-                    {attendanceData.filter(r => r.status === 'present').length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
-                    <span className="text-xs text-gray-600">Absent</span>
-                  </div>
-                  <span className="text-xs font-semibold text-gray-900">
-                    {attendanceData.filter(r => r.status === 'absent').length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
-                    <span className="text-xs text-gray-600">Late</span>
-                  </div>
-                  <span className="text-xs font-semibold text-gray-900">
-                    {attendanceData.filter(r => r.lateMark || r.status === 'late').length}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+      {/* Present */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+            <span className="text-xs font-medium text-gray-700">Present</span>
+          </div>
+          <span className="text-xs font-bold text-gray-900">
+            {attendanceData.filter(r => r.status === 'present').length}
+          </span>
+        </div>
+
+        <div className="w-full h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-emerald-500 rounded-full"
+            style={{
+              width: `${
+                (attendanceData.filter(r => r.status === 'present').length /
+                  attendanceData.length) *
+                100
+              }%`,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Absent */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
+            <span className="text-xs font-medium text-gray-700">Absent</span>
+          </div>
+          <span className="text-xs font-bold text-gray-900">
+            {attendanceData.filter(r => r.status === 'absent').length}
+          </span>
+        </div>
+
+        <div className="w-full h-1.5 bg-rose-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-rose-500 rounded-full"
+            style={{
+              width: `${
+                (attendanceData.filter(r => r.status === 'absent').length /
+                  attendanceData.length) *
+                100
+              }%`,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Late */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
+            <span className="text-xs font-medium text-gray-700">Late</span>
+          </div>
+          <span className="text-xs font-bold text-gray-900">
+            {attendanceData.filter(r => r.lateMark || r.status === 'late').length}
+          </span>
+        </div>
+
+        <div className="w-full h-1.5 bg-amber-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-amber-500 rounded-full"
+            style={{
+              width: `${
+                (attendanceData.filter(r => r.lateMark || r.status === 'late').length /
+                  attendanceData.length) *
+                100
+              }%`,
+            }}
+          />
+        </div>
+      </div>
+
+    </div>
+  </div>
+</motion.div>
         </div>
 
         {/* Footer */}
