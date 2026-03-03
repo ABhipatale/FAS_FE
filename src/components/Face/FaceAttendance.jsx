@@ -315,8 +315,8 @@ export default function FaceAttendance() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen bg-gray-100 ">
+      {/* <div className="container mx-auto px-4 max-w-4xl"> */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-6">Face Attendance</h1>
           
@@ -504,7 +504,7 @@ export default function FaceAttendance() {
             </div>
           </div>
         </div>
-      </div>
+      {/* </div> */}
       
       {/* Verification Dialog */}
       {showVerificationDialog && verificationData && (
