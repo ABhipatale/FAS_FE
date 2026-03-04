@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaSave, FaUserEdit } from 'react-icons/fa';
-// import FaceRegistrationModal from './Face/FaceRegistrationModal';
+ import FaceRegistrationModal from '../Face/FaceRegistrationModal';
 import { apiCall } from '../../config/api';
 import API_CONFIG from '../../config/api';
 
@@ -117,9 +117,20 @@ const EditEmployeeModal = ({ employee, onClose, onUpdateComplete }) => {
 
   const handleFaceRegistrationComplete = () => {
     setMessage('Face registered successfully!');
-    if (onUpdateComplete) {
-      onUpdateComplete();
-    }
+    // Reopen the edit modal after successful registration
+    setTimeout(() => {
+      if (onUpdateComplete) {
+        onUpdateComplete();
+      }
+    }, 500);
+  };
+
+  const openFaceRegistration = () => {
+    setShowFaceModal(true);
+  };
+
+  const closeFaceRegistration = () => {
+    setShowFaceModal(false);
   };
 
   const hasFaceRegistered = employee && employee.face_descriptor && 
@@ -168,7 +179,7 @@ const EditEmployeeModal = ({ employee, onClose, onUpdateComplete }) => {
                 Face Recognition — {hasFaceRegistered ? 'Registered' : 'Not Registered'}
               </span>
               <button 
-                onClick={() => setShowFaceModal(true)}
+                onClick={openFaceRegistration}
                 style={S.faceRegisterBtn}
                 className="face-register-btn"
               >
@@ -346,14 +357,15 @@ const EditEmployeeModal = ({ employee, onClose, onUpdateComplete }) => {
       </div>
 
       {/* Face Registration Modal */}
-      {/* {showFaceModal && (
+      {showFaceModal && (
         <FaceRegistrationModal
           userId={employee.id}
           userName={employee.name}
           onRegistrationComplete={handleFaceRegistrationComplete}
-          onClose={() => setShowFaceModal(false)}
+          onClose={closeFaceRegistration}
+          isOpen={true}
         />
-      )} */}
+      )}
     </>
   );
 };
@@ -370,7 +382,7 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: 60, // Lower than face modal when isOpen is true
     padding: 24,
   },
   modal: {
