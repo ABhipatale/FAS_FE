@@ -288,6 +288,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaEye, FaTrash, FaTimes, FaSearch, FaUsers } from 'react-icons/fa';
 import FourStepEmployeeForm from './FourStepEmployeeForm';
+import EditEmployeeModal from './EditEmployeeModal';
 import { apiCall } from '../../config/api';
 import API_CONFIG from '../../config/api';
 
@@ -297,6 +298,7 @@ const EmployeeManagement = () => {
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [editingEmployee, setEditingEmployee] = useState(null);
   const [search, setSearch] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
@@ -528,7 +530,12 @@ const EmployeeManagement = () => {
                             <button onClick={() => setSelectedEmployee(emp)} style={S.actionBtn} className="action-btn action-view" title="View Details">
                               <FaEye size={14} />
                             </button>
-                            <button onClick={() => {}} style={S.actionBtn} className="action-btn action-edit" title="Edit">
+                            <button 
+                              onClick={() => setEditingEmployee(emp)} 
+                              style={S.actionBtn} 
+                              className="action-btn action-edit" 
+                              title="Edit Employee"
+                            >
                               <FaEdit size={14} />
                             </button>
                             <button onClick={() => setDeleteConfirm(emp.id)} style={S.actionBtn} className="action-btn action-delete" title="Delete">
@@ -659,6 +666,18 @@ const EmployeeManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ─── EDIT EMPLOYEE MODAL ─── */}
+      {editingEmployee && (
+        <EditEmployeeModal
+          employee={editingEmployee}
+          onClose={() => setEditingEmployee(null)}
+          onUpdateComplete={() => {
+            setEditingEmployee(null);
+            fetchEmployees();
+          }}
+        />
       )}
     </div>
   );
