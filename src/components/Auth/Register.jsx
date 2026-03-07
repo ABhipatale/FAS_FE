@@ -159,12 +159,12 @@ export default function Register() {
               Login here
             </a>
           </p>
-          <p className="text-sm text-gray-600">
+          {/* <p className="text-sm text-gray-600">
             Want to register a company?{' '}
             <a href="/company-register" className="text-blue-600 hover:underline">
               Register company
             </a>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>
