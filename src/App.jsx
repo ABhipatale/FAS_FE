@@ -75,7 +75,7 @@ const AppWrapper = ({ children }) => {
     <div className="flex">
       <Sidebar user={user} isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       <div className="flex-1 lg:ml-64">
-        <Navbar />
+        {/* <Navbar /> */}
         <main className="p-4">
           {children}
         </main>
