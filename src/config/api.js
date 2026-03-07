@@ -4,6 +4,11 @@ const API_CONFIG = {
   TIMEOUT: 10000,
   
   ENDPOINTS: {
+    // Companies
+    COMPANIES_REGISTER: '/companies/register',
+    COMPANY_DETAILS: '/company/details',
+    COMPANY_UPDATE: '/company/update',
+    
     // Authentication
     LOGIN: '/login',
     REGISTER: '/register',

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import API_CONFIG from '../config/api';
 
 const AuthStateContext = createContext();
 
@@ -87,7 +88,7 @@ export const AuthProvider = ({ children }) => {
       // Verify token validity by fetching user data
       const fetchUserData = async () => {
         try {
-          const response = await fetch('http://localhost:8000/api/me', {
+          const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ME}`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -105,7 +106,7 @@ export const AuthProvider = ({ children }) => {
               // Fetch company details after getting user data
               const fetchCompanyData = async () => {
                 try {
-                  const companyResponse = await fetch('http://localhost:8000/api/company/details', {
+                  const companyResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_DETAILS}`, {
                     method: 'GET',
                     headers: {
                       'Authorization': `Bearer ${token}`,
@@ -174,7 +175,7 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      const response = await fetch('http://localhost:8000/api/login', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LOGIN}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +195,7 @@ export const AuthProvider = ({ children }) => {
 
         // Fetch company details after successful login
         try {
-          const companyResponse = await fetch('http://localhost:8000/api/company/details', {
+          const companyResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_DETAILS}`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -255,7 +256,7 @@ export const AuthProvider = ({ children }) => {
     const token = state.token;
     if (token) {
       try {
-        await fetch('http://localhost:8000/api/logout', {
+        await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LOGOUT}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -278,7 +279,7 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOADING' });
 
     try {
-      const response = await fetch('http://localhost:8000/api/register', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.REGISTER}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -319,7 +320,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/company/update', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_UPDATE}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${state.token}`,
@@ -353,7 +354,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/company/details', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_DETAILS}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${state.token}`,

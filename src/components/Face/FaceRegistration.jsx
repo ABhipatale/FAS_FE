@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import * as faceapi from 'face-api.js';
+import API_CONFIG from '../../config/api';
 
 export default function FaceRegistration() {
   const videoRef = useRef(null);
@@ -101,7 +102,7 @@ export default function FaceRegistration() {
           const faceDescriptor = detections[0].descriptor;
           
           // Send face descriptor to backend
-          const response = await fetch('http://localhost:8000/api/face-descriptor', {
+          const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FACE_DESCRIPTOR}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

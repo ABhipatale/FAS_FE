@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
 
 const CompanyRegister = () => {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ const CompanyRegister = () => {
     setSuccessMessage('');
     
     try {
-      const response = await fetch('http://localhost:8000/api/companies/register', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANIES_REGISTER}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
