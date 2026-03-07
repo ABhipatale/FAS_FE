@@ -91,13 +91,15 @@ const Sidebar = ({ user }) => {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <button
-        onClick={toggleSidebar}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-blue-600 text-white"
-      >
-        {isOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
-      </button>
+      {/* Mobile menu button - only show when sidebar is closed */}
+      {!isOpen && (
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-blue-600 text-white shadow-lg"
+        >
+          <FaBars size={20} />
+        </button>
+      )}
 
       {/* Sidebar backdrop for mobile */}
       {isOpen && (
@@ -147,6 +149,15 @@ const Sidebar = ({ user }) => {
             <span>Logout</span>
           </button>
         </div>
+
+        {/* Hide sidebar button - bottom right */}
+        <button
+          onClick={closeSidebar}
+          className="lg:hidden absolute bottom-4 right-4 p-2 rounded-md bg-gray-700 hover:bg-gray-600 text-white shadow-lg transition-colors duration-200"
+          title="Hide Sidebar"
+        >
+          <FaTimes size={16} />
+        </button>
       </div>
 
       {/* Overlay for mobile when sidebar is open */}

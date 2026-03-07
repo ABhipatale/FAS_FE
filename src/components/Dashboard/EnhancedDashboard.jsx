@@ -1157,7 +1157,7 @@ export default function EnhancedDashboard() {
   <div className="flex items-center justify-between">
 
     {/* Left */}
-    <p className="text-sm font-medium text-white whitespace-nowrap">
+    <p className="text-sm font-medium text-white whitespace-nowrap ml-5 sm:ml-0">
       Welcome {user?.name || "Admin"}!
     </p>
 
