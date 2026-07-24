@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaBars, FaTimes, FaTachometerAlt, FaUsers, FaCog, FaCalendarAlt, FaUser, FaSignOutAlt, FaBuilding } from 'react-icons/fa';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Sidebar = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { logout } = useAuth();
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -83,9 +85,8 @@ const Sidebar = ({ user }) => {
 
   const menuItems = getMenuItems();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await logout();
     window.location.href = '/login';
   };
 

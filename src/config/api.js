@@ -1,6 +1,6 @@
 // Centralized API configuration
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:8000/api',
+  BASE_URL: 'http://localhost:8009/api',
   TIMEOUT: 10000,
   
   ENDPOINTS: {
@@ -68,8 +68,11 @@ export const apiCall = async (endpoint, options = {}) => {
     
     // Handle authentication errors
     if (response.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid - clear the whole cached session,
+      // otherwise the app re-hydrates a dead one on the next load
       localStorage.removeItem('authToken');
+      localStorage.removeItem('authUser');
+      localStorage.removeItem('authCompany');
       window.location.href = '/login';
       throw new Error('Authentication required');
     }

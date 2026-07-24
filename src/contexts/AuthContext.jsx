@@ -67,13 +67,43 @@ const authReducer = (state, action) => {
   }
 };
 
-// Initial state
+// Read a JSON value from localStorage without throwing on corrupt data
+const readStored = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    localStorage.removeItem(key);
+    return null;
+  }
+};
+
+// Persist the session so a page refresh restores it immediately,
+// before the /me verification round-trip finishes.
+const storeSession = (token, user, company) => {
+  localStorage.setItem('authToken', token);
+  if (user) localStorage.setItem('authUser', JSON.stringify(user));
+  if (company) localStorage.setItem('authCompany', JSON.stringify(company));
+  else localStorage.removeItem('authCompany');
+};
+
+const clearSession = () => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('authUser');
+  localStorage.removeItem('authCompany');
+};
+
+// Initial state - hydrated from localStorage so a refresh doesn't bounce to /login
+const storedToken = localStorage.getItem('authToken');
+const storedUser = storedToken ? readStored('authUser') : null;
+
 const initialState = {
-  isAuthenticated: false,
-  user: null,
-  token: null,
-  company: null,
-  loading: true, // Initially true while checking stored token
+  isAuthenticated: Boolean(storedToken && storedUser),
+  user: storedUser,
+  token: storedToken || null,
+  company: storedToken ? readStored('authCompany') : null,
+  // Only block the UI when we have a token but no cached user to render with
+  loading: Boolean(storedToken) && !storedUser,
   error: null,
 };
 
@@ -81,93 +111,87 @@ const initialState = {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  // Fetch company details for a token; never throws
+  const fetchCompany = async (token) => {
+    try {
+      const companyResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_DETAILS}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (companyResponse.ok) {
+        const companyData = await companyResponse.json();
+        if (companyData.success && companyData.data) {
+          return companyData.data;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching company data:', error);
+    }
+    return null;
+  };
+
   // Check for stored token on initial load
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    if (token) {
-      // Verify token validity by fetching user data
-      const fetchUserData = async () => {
-        try {
-          const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ME}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.status === 401 || response.status === 403) {
-            // Token invalid, clear it
-            localStorage.removeItem('authToken');
-            dispatch({ type: 'LOGOUT' });
-          } else if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.data) {
-              // Fetch company details after getting user data
-              const fetchCompanyData = async () => {
-                try {
-                  const companyResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_DETAILS}`, {
-                    method: 'GET',
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                  });
-
-                  let company = null;
-                  if (companyResponse.ok) {
-                    const companyData = await companyResponse.json();
-                    if (companyData.success && companyData.data) {
-                      company = companyData.data;
-                    }
-                  }
-
-                  dispatch({
-                    type: 'LOGIN_SUCCESS',
-                    payload: {
-                      user: data.data.user,
-                      token: token,
-                      company: company,
-                    },
-                  });
-                } catch (error) {
-                  console.error('Error fetching company data:', error);
-                  // Still dispatch login success with user data but no company
-                  dispatch({
-                    type: 'LOGIN_SUCCESS',
-                    payload: {
-                      user: data.data.user,
-                      token: token,
-                      company: null,
-                    },
-                  });
-                }
-              };
-
-              fetchCompanyData();
-            } else {
-              // Token invalid, clear it
-              localStorage.removeItem('authToken');
-              dispatch({ type: 'LOGOUT' });
-            }
-          } else {
-            // Other error, clear token
-            localStorage.removeItem('authToken');
-            dispatch({ type: 'LOGOUT' });
-          }
-        } catch (error) {
-          console.error('Error verifying token:', error);
-          // For network errors, keep the token but set as unauthenticated temporarily
-          dispatch({ type: 'LOADED' });
-        } finally {
-          dispatch({ type: 'LOADED' });
-        }
-      };
-
-      fetchUserData();
-    } else {
+    if (!token) {
       dispatch({ type: 'LOADED' });
+      return;
     }
+
+    // Verify token validity by fetching user data
+    const verifySession = async () => {
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ME}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        // Only a definitive rejection from the server logs the user out
+        if (response.status === 401 || response.status === 403) {
+          clearSession();
+          dispatch({ type: 'LOGOUT' });
+          return;
+        }
+
+        if (!response.ok) {
+          // Server-side hiccup (5xx, etc.) - keep the cached session
+          console.error('Token verification failed with status', response.status);
+          dispatch({ type: 'LOADED' });
+          return;
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.data) {
+          clearSession();
+          dispatch({ type: 'LOGOUT' });
+          return;
+        }
+
+        const user = data.data.user;
+        // Awaited: loading must not clear before isAuthenticated is set,
+        // otherwise ProtectedRoute redirects to /login mid-restore.
+        const company = await fetchCompany(token);
+
+        storeSession(token, user, company);
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: { user, token, company },
+        });
+      } catch (error) {
+        console.error('Error verifying token:', error);
+        // Network error - keep whatever session was restored from localStorage
+        dispatch({ type: 'LOADED' });
+      }
+    };
+
+    verifySession();
   }, []);
 
   // Login function
@@ -189,48 +213,19 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Store token in localStorage
         const token = data.data.token;
-        localStorage.setItem('authToken', token);
+        const user = data.data.user;
 
         // Fetch company details after successful login
-        try {
-          const companyResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_DETAILS}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
+        const company = await fetchCompany(token);
 
-          let company = null;
-          if (companyResponse.ok) {
-            const companyData = await companyResponse.json();
-            if (companyData.success && companyData.data) {
-              company = companyData.data;
-            }
-          }
+        // Persist the whole session so a refresh can restore it without a round-trip
+        storeSession(token, user, company);
 
-          dispatch({
-            type: 'LOGIN_SUCCESS',
-            payload: {
-              user: data.data.user,
-              token: token,
-              company: company,
-            },
-          });
-        } catch (error) {
-          console.error('Error fetching company data:', error);
-          // Still dispatch login success with user data but no company
-          dispatch({
-            type: 'LOGIN_SUCCESS',
-            payload: {
-              user: data.data.user,
-              token: token,
-              company: null,
-            },
-          });
-        }
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: { user, token, company },
+        });
 
         return { success: true, message: data.message };
       } else {
@@ -270,7 +265,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Clear local storage and state
-    localStorage.removeItem('authToken');
+    clearSession();
     dispatch({ type: 'LOGOUT' });
   };
 
@@ -332,6 +327,7 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        localStorage.setItem('authCompany', JSON.stringify(data.data));
         dispatch({
           type: 'SET_COMPANY',
           payload: data.data,
@@ -365,6 +361,7 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        localStorage.setItem('authCompany', JSON.stringify(data.data));
         dispatch({
           type: 'SET_COMPANY',
           payload: data.data,
