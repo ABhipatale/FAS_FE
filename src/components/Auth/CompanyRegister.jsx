@@ -4,7 +4,7 @@ import {
   FiBriefcase, FiMail, FiMapPin, FiPhone, FiUser, FiLock,
   FiEye, FiEyeOff, FiArrowRight, FiArrowLeft, FiAlertCircle,
   FiCheck, FiCheckCircle, FiShield, FiPlus, FiSearch, FiX,
-  FiRefreshCw, FiUsers, FiInbox,
+  FiRefreshCw, FiUsers, FiInbox, FiEdit2, FiPower, FiSave,
 } from 'react-icons/fi';
 import API_CONFIG from '../../config/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -561,6 +561,299 @@ const CompanyFormModal = ({ open, onClose, onCreated }) => {
   );
 };
 
+/* --------------------------------------------------------- Edit modal */
+
+const CompanyEditModal = ({ company, token, onClose, onSaved }) => {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', status: 'active' });
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  // Load the selected company into the form each time one is opened
+  useEffect(() => {
+    if (!company) return;
+    setForm({
+      name: company.name || '',
+      email: company.email || '',
+      phone: company.phone || '',
+      address: company.address || '',
+      status: company.status === 'inactive' ? 'inactive' : 'active',
+    });
+    setErrors({});
+  }, [company]);
+
+  useEffect(() => {
+    if (!company) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape' && !saving) onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [company, saving, onClose]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const next = {};
+    if (!form.name.trim()) next.name = 'Company name is required';
+    if (!form.email.trim()) next.email = 'Company email is required';
+    else if (!/\S+@\S+\.\S+/.test(form.email)) next.email = 'Enter a valid email address';
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
+
+    setSaving(true);
+
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_BY_ID(company.id)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            phone: form.phone,
+            address: form.address,
+            status: form.status,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        onSaved(data.data, `${form.name} was updated.`);
+      } else if (data.errors) {
+        const backendErrors = {};
+        Object.keys(data.errors).forEach((key) => {
+          backendErrors[key] = Array.isArray(data.errors[key]) ? data.errors[key][0] : data.errors[key];
+        });
+        setErrors(backendErrors);
+      } else {
+        setErrors({ general: data.message || 'Could not update this company.' });
+      }
+    } catch (error) {
+      console.error('Company update error:', error);
+      setErrors({ general: 'Network error. Check your connection and try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {company && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !saving && onClose()}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+          />
+
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="company-edit-title"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            className="relative my-auto w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-6 sm:p-8 sm:pb-6">
+              <div>
+                <h2 id="company-edit-title" className="text-xl font-semibold tracking-tight text-slate-900">
+                  Edit company
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Changes apply immediately for everyone in this workspace.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+                aria-label="Close"
+                className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40"
+              >
+                <FiX className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} noValidate className="p-6 sm:p-8">
+              <AnimatePresence>
+                {errors.general && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mb-6 overflow-hidden"
+                  >
+                    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+                      <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                      <p className="text-sm font-medium text-red-700">{errors.general}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <Field id="edit_name" label="Company name" icon={FiBriefcase} required error={errors.name} className="sm:col-span-2">
+                  <input
+                    id="edit_name"
+                    name="name"
+                    type="text"
+                    value={form.name}
+                    onChange={handleChange}
+                    className={inputClass(errors.name)}
+                  />
+                </Field>
+
+                <Field id="edit_email" label="Company email" icon={FiMail} required error={errors.email} className="sm:col-span-2">
+                  <input
+                    id="edit_email"
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    className={inputClass(errors.email)}
+                  />
+                </Field>
+
+                <Field id="edit_phone" label="Phone number" icon={FiPhone} hint="Optional" error={errors.phone}>
+                  <input
+                    id="edit_phone"
+                    name="phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={handleChange}
+                    className={inputClass(errors.phone)}
+                  />
+                </Field>
+
+                <Field id="edit_address" label="Address" icon={FiMapPin} hint="Optional" error={errors.address}>
+                  <input
+                    id="edit_address"
+                    name="address"
+                    type="text"
+                    value={form.address}
+                    onChange={handleChange}
+                    className={inputClass(errors.address)}
+                  />
+                </Field>
+
+                <Field id="edit_status" label="Status" icon={FiPower} error={errors.status} className="sm:col-span-2">
+                  <select
+                    id="edit_status"
+                    name="status"
+                    value={form.status}
+                    onChange={handleChange}
+                    className={`${inputClass(errors.status)} appearance-none pr-10`}
+                  >
+                    <option value="active">Active — members can sign in</option>
+                    <option value="inactive">Inactive — workspace suspended</option>
+                  </select>
+                </Field>
+              </div>
+
+              <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={saving}
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-600/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <FiSave className="h-4 w-4" />
+                      Save changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+/* ----------------------------------------------------- Confirm dialog */
+
+const ConfirmDialog = ({ open, title, body, confirmLabel, busy, onConfirm, onCancel }) => (
+  <AnimatePresence>
+    {open && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => !busy && onCancel()}
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+        />
+        <motion.div
+          role="alertdialog"
+          aria-modal="true"
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 12, scale: 0.98 }}
+          transition={{ duration: 0.18 }}
+          className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-7"
+        >
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-50">
+            <FiAlertCircle className="h-5 w-5 text-amber-600" />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold tracking-tight text-slate-900">{title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">{body}</p>
+
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={busy}
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={busy}
+              className="flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
+              {confirmLabel}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+);
+
 /* ------------------------------------------------------- List helpers */
 
 const StatusBadge = ({ status }) => {
@@ -579,7 +872,7 @@ const StatusBadge = ({ status }) => {
 
 const SkeletonRow = () => (
   <tr className="border-t border-slate-100">
-    {[...Array(5)].map((_, i) => (
+    {[...Array(6)].map((_, i) => (
       <td key={i} className="px-5 py-4">
         <div className="h-3.5 w-full max-w-[9rem] animate-pulse rounded bg-slate-100" />
       </td>
@@ -590,7 +883,9 @@ const SkeletonRow = () => (
 /* ------------------------------------------------------- Main screen */
 
 const CompanyManagement = () => {
-  const { token } = useAuth();
+  // `company` here is the signed-in superadmin's own company - the backend
+  // refuses to deactivate it, so the row is marked and its button disabled.
+  const { token, company: ownCompany } = useAuth();
 
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -598,6 +893,11 @@ const CompanyManagement = () => {
   const [query, setQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const [editing, setEditing] = useState(null);
+  const [pendingDeactivate, setPendingDeactivate] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+  // Kept separate from `error`: a failed row action must not blank out the table
+  const [actionError, setActionError] = useState('');
 
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
@@ -644,6 +944,56 @@ const CompanyManagement = () => {
     setModalOpen(false);
     setToast(`${companyName} was registered successfully.`);
     fetchCompanies();
+  };
+
+  // Patch a single row in place so the table doesn't flash on save
+  const applyUpdate = (updated, message) => {
+    setCompanies((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+    setEditing(null);
+    setActionError('');
+    if (message) setToast(message);
+  };
+
+  const setStatus = async (company, status) => {
+    setBusyId(company.id);
+    setActionError('');
+
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPANY_BY_ID(company.id)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        applyUpdate(
+          data.data,
+          `${company.name} is now ${status === 'active' ? 'active' : 'inactive'}.`
+        );
+      } else {
+        setActionError(data.message || `Could not ${status === 'active' ? 'activate' : 'deactivate'} ${company.name}.`);
+      }
+    } catch (err) {
+      console.error('Company status update failed:', err);
+      setActionError('Network error. Check your connection and try again.');
+    } finally {
+      setBusyId(null);
+      setPendingDeactivate(null);
+    }
+  };
+
+  // Activating is harmless; deactivating locks users out, so confirm first.
+  const handleToggleStatus = (company) => {
+    if (company.status === 'active') setPendingDeactivate(company);
+    else setStatus(company, 'active');
   };
 
   const filtered = useMemo(() => {
@@ -733,7 +1083,7 @@ const CompanyManagement = () => {
         />
       </div>
 
-      {/* Error */}
+      {/* Failed to load the list - the table can't render at all */}
       {error && !loading && (
         <div className="mt-6 flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center">
           <FiAlertCircle className="h-4 w-4 shrink-0 text-red-500" />
@@ -748,6 +1098,29 @@ const CompanyManagement = () => {
         </div>
       )}
 
+      {/* A single action failed - the list itself is still valid, so keep it visible */}
+      <AnimatePresence>
+        {actionError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4"
+          >
+            <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+            <p className="flex-1 text-sm font-medium text-red-700">{actionError}</p>
+            <button
+              type="button"
+              onClick={() => setActionError('')}
+              aria-label="Dismiss"
+              className="text-red-500 transition hover:text-red-700"
+            >
+              <FiX className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Table */}
       {!error && (
         <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -760,12 +1133,16 @@ const CompanyManagement = () => {
                   <th scope="col" className="px-5 py-3 font-medium">Address</th>
                   <th scope="col" className="px-5 py-3 font-medium">Status</th>
                   <th scope="col" className="px-5 py-3 font-medium">Registered</th>
+                  <th scope="col" className="px-5 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && [...Array(4)].map((_, i) => <SkeletonRow key={i} />)}
 
-                {!loading && filtered.map((company) => (
+                {!loading && filtered.map((company) => {
+                  const isOwnCompany = ownCompany?.id === company.id;
+
+                  return (
                   <tr key={company.id} className="border-t border-slate-100 transition hover:bg-slate-50/70">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -773,7 +1150,14 @@ const CompanyManagement = () => {
                           {initials(company.name)}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-slate-900">{company.name}</p>
+                          <p className="flex items-center gap-2 truncate font-medium text-slate-900">
+                            {company.name}
+                            {isOwnCompany && (
+                              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+                                Your company
+                              </span>
+                            )}
+                          </p>
                           {company.users_count !== undefined && (
                             <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                               <FiUsers className="h-3 w-3" />
@@ -796,12 +1180,49 @@ const CompanyManagement = () => {
                     <td className="whitespace-nowrap px-5 py-4 text-slate-600">
                       {formatDate(company.created_at)}
                     </td>
+                    <td className="whitespace-nowrap px-5 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditing(company)}
+                          disabled={busyId === company.id}
+                          title={`Edit ${company.name}`}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+                        >
+                          <FiEdit2 className="h-3.5 w-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(company)}
+                          disabled={busyId === company.id || (isOwnCompany && company.status === 'active')}
+                          title={isOwnCompany && company.status === 'active'
+                            ? 'You cannot deactivate the company your own account belongs to'
+                            : company.status === 'active'
+                              ? `Deactivate ${company.name}`
+                              : `Activate ${company.name}`}
+                          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                            company.status === 'active'
+                              ? 'border-amber-200 bg-white text-amber-700 hover:bg-amber-50'
+                              : 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+                          }`}
+                        >
+                          {busyId === company.id ? (
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          ) : (
+                            <FiPower className="h-3.5 w-3.5" />
+                          )}
+                          {company.status === 'active' ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
 
                 {!loading && filtered.length === 0 && (
                   <tr className="border-t border-slate-100">
-                    <td colSpan={5} className="px-5 py-16">
+                    <td colSpan={6} className="px-5 py-16">
                       <div className="flex flex-col items-center text-center">
                         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
                           <FiInbox className="h-5 w-5 text-slate-400" />
@@ -838,6 +1259,23 @@ const CompanyManagement = () => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onCreated={handleCreated}
+      />
+
+      <CompanyEditModal
+        company={editing}
+        token={token}
+        onClose={() => setEditing(null)}
+        onSaved={applyUpdate}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDeactivate)}
+        title={`Deactivate ${pendingDeactivate?.name ?? 'this company'}?`}
+        body="Its workspace is suspended until you activate it again. Existing attendance records are kept."
+        confirmLabel="Deactivate"
+        busy={busyId === pendingDeactivate?.id}
+        onConfirm={() => setStatus(pendingDeactivate, 'inactive')}
+        onCancel={() => setPendingDeactivate(null)}
       />
     </div>
   );
