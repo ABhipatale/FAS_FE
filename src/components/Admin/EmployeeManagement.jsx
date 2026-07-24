@@ -350,8 +350,11 @@ const EmployeeManagement = () => {
     }
   };
 
+  // Faces live in the face_descriptors table, surfaced as face_descriptors_count.
+  // The legacy users.face_descriptor column is kept as a fallback for old rows.
   const hasFaceDescriptors = (employee) =>
-    employee.face_descriptor && Array.isArray(employee.face_descriptor) && employee.face_descriptor.length > 0;
+    (employee?.face_descriptors_count ?? 0) > 0 ||
+    (Array.isArray(employee?.face_descriptor) && employee.face_descriptor.length > 0);
 
   const filtered = employees.filter((e) =>
     e.name?.toLowerCase().includes(search.toLowerCase()) ||

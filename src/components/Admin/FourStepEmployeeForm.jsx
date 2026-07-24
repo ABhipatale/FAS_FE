@@ -4,6 +4,34 @@ import FaceRegistrationModal from '../Face/FaceRegistrationModal';
 import { apiCall } from '../../config/api';
 import API_CONFIG from '../../config/api';
 
+// "09:00:00" -> "9:00 AM"
+const formatTime = (value) => {
+  if (!value) return '—';
+  const [h, m] = String(value).split(':');
+  const hour = Number(h);
+  if (Number.isNaN(hour)) return value;
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const display = hour % 12 === 0 ? 12 : hour % 12;
+  return `${display}:${m ?? '00'} ${suffix}`;
+};
+
+// Length of a shift, wrapping correctly across midnight (e.g. 22:28 -> 23:35)
+const shiftDuration = (start, end) => {
+  const toMinutes = (value) => {
+    const [h, m] = String(value || '').split(':').map(Number);
+    return Number.isNaN(h) ? null : h * 60 + (m || 0);
+  };
+
+  const from = toMinutes(start);
+  const to = toMinutes(end);
+  if (from === null || to === null) return null;
+
+  const diff = (to - from + 1440) % 1440;
+  const hours = Math.floor(diff / 60);
+  const mins = diff % 60;
+  return mins ? `${hours}h ${mins}m` : `${hours}h`;
+};
+
 const FourStepEmployeeForm = ({ onClose }) => {
   const [step, setStep] = useState(1);
   const [shifts, setShifts] = useState([]);
@@ -290,44 +318,69 @@ const FourStepEmployeeForm = ({ onClose }) => {
             <h2 className="text-xl font-bold text-gray-800 flex items-center">
               <FaClock className="mr-2" /> Shift Assignment
             </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select Shift *
-                </label>
-                <select
-                  name="shift_id"
-                  value={formData.shift_id}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a shift</option>
-                  {shifts.map((shift) => (
-                    <option key={shift.id} value={shift.id}>
-                      {shift.shift_name} ({shift.punch_in_time} - {shift.punch_out_time})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-medium text-gray-800 mb-2">Available Shifts:</h3>
-                <ul className="space-y-2">
-                  {shifts.map((shift) => (
-                    <li key={shift.id} className="text-sm text-gray-600">
-                      <span className="font-medium">{shift.shift_name}:</span> {shift.punch_in_time} - {shift.punch_out_time} 
-                      <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                        shift.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {shift.status}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+            {/* One selectable card per shift - the old dropdown and the
+                read-only "Available Shifts" list showed the same data twice. */}
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-700 mb-2">
+                Select Shift *
+              </legend>
+
+              {shifts.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                  <p className="text-sm font-medium text-gray-700">No shifts available</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Create one under Shift Management before assigning a shift.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {shifts.map((shift) => {
+                    const selected = String(formData.shift_id) === String(shift.id);
+                    const duration = shiftDuration(shift.punch_in_time, shift.punch_out_time);
+
+                    return (
+                      <label
+                        key={shift.id}
+                        className={`flex cursor-pointer flex-col rounded-lg border p-4 transition ${
+                          selected
+                            ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600/20'
+                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="shift_id"
+                          value={shift.id}
+                          checked={selected}
+                          onChange={handleInputChange}
+                          className="sr-only"
+                        />
+
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-medium text-gray-900">{shift.shift_name}</span>
+                          {selected && <FaCheck className="mt-1 shrink-0 text-blue-600" />}
+                        </div>
+
+                        <span className="mt-1 text-sm text-gray-600">
+                          {formatTime(shift.punch_in_time)} – {formatTime(shift.punch_out_time)}
+                        </span>
+
+                        <div className="mt-3 flex items-center gap-2">
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            shift.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {shift.status}
+                          </span>
+                          {duration && <span className="text-xs text-gray-500">{duration}</span>}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </fieldset>
           </div>
         );
       case 3:
