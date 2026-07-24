@@ -286,11 +286,18 @@
 // export default EmployeeManagement;
 
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaEye, FaTrash, FaTimes, FaSearch, FaUsers } from 'react-icons/fa';
+import {
+  FaPlus, FaEdit, FaEye, FaTrash, FaTimes, FaSearch, FaUsers,
+  FaCamera, FaCheckCircle, FaExclamationCircle,
+  FaEnvelope, FaPhone, FaBriefcase, FaIdBadge, FaBirthdayCake,
+  FaCalendarAlt, FaVenusMars, FaMapMarkerAlt, FaClock,
+} from 'react-icons/fa';
 import FourStepEmployeeForm from './FourStepEmployeeForm';
 import EditEmployeeModal from './EditEmployeeModal';
+import FaceRegistrationModal from '../Face/FaceRegistrationModal';
 import { apiCall } from '../../config/api';
 import API_CONFIG from '../../config/api';
+import { hasFaceRegistered } from '../../utils/face';
 
 const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
@@ -301,6 +308,8 @@ const EmployeeManagement = () => {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [search, setSearch] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  // Employee whose face is being captured from the details modal
+  const [faceTarget, setFaceTarget] = useState(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -318,6 +327,12 @@ const EmployeeManagement = () => {
       const data = response.data;
       if (data.success) {
         setEmployees(data.data);
+        // Keep an open details modal pointed at the freshly loaded row, so its
+        // face-registration status stays in sync. The edit modal is left alone
+        // on purpose - re-seeding it would wipe unsaved changes.
+        setSelectedEmployee((current) =>
+          current ? data.data.find((e) => e.id === current.id) || current : current
+        );
       } else {
         throw new Error(data.message || 'Failed to load employees');
       }
@@ -350,11 +365,7 @@ const EmployeeManagement = () => {
     }
   };
 
-  // Faces live in the face_descriptors table, surfaced as face_descriptors_count.
-  // The legacy users.face_descriptor column is kept as a fallback for old rows.
-  const hasFaceDescriptors = (employee) =>
-    (employee?.face_descriptors_count ?? 0) > 0 ||
-    (Array.isArray(employee?.face_descriptor) && employee.face_descriptor.length > 0);
+  const hasFaceDescriptors = hasFaceRegistered;
 
   const filtered = employees.filter((e) =>
     e.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -524,7 +535,7 @@ const EmployeeManagement = () => {
                         <td style={S.td}>
                           <span style={{ ...S.facePill, ...(face ? S.facePillYes : S.facePillNo) }}>
                             <span style={S.faceDot(face)}></span>
-                            {face ? 'Registered' : 'Not registered'}
+                            {face ? 'Registered' : 'Not Registered'}
                           </span>
                         </td>
                         {/* Actions */}
@@ -629,15 +640,41 @@ const EmployeeManagement = () => {
             </div>
 
             <div style={S.modalBody}>
-              {/* Face status strip */}
+              {/* Face status card */}
               {(() => {
                 const face = hasFaceDescriptors(selectedEmployee);
                 return (
-                  <div style={{ ...S.faceBanner, ...(face ? S.faceBannerYes : S.faceBannerNo) }}>
-                    <span style={S.faceBannerDot(face)}></span>
-                    <span style={S.faceBannerText(face)}>
-                      Face Recognition — {face ? 'Registered' : 'Not Registered'}
-                    </span>
+                  <div style={{ ...S.faceCard, ...(face ? S.faceCardYes : S.faceCardNo) }}>
+                    <div style={{ ...S.faceIconWrap, ...(face ? S.faceIconWrapYes : S.faceIconWrapNo) }}>
+                      {face
+                        ? <FaCheckCircle size={17} color="#16a34a" />
+                        : <FaExclamationCircle size={17} color="#d97706" />}
+                    </div>
+
+                    <div style={S.faceTextWrap}>
+                      <div style={S.faceTitleRow}>
+                        <span style={S.faceTitle}>Face Recognition</span>
+                        <span style={{ ...S.faceStatusPill, ...(face ? S.faceStatusPillYes : S.faceStatusPillNo) }}>
+                          <span style={S.faceDot(face)}></span>
+                          {face ? 'Registered' : 'Not Registered'}
+                        </span>
+                      </div>
+                      <p style={S.faceHint}>
+                        {face
+                          ? 'Face data is on file — this employee can punch in at the kiosk.'
+                          : 'No face on file — attendance by face is unavailable for this employee.'}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setFaceTarget(selectedEmployee)}
+                      style={{ ...S.faceBtn, ...(face ? S.faceBtnGhost : S.faceBtnPrimary) }}
+                      className={face ? 'face-btn-ghost' : 'face-btn-primary'}
+                    >
+                      <FaCamera size={12} style={{ marginRight: 7 }} />
+                      {face ? 'Update Face' : 'Register Face'}
+                    </button>
                   </div>
                 );
               })()}
@@ -645,19 +682,20 @@ const EmployeeManagement = () => {
               {/* Details grid */}
               <div style={S.detailGrid}>
                 {[
-                  { label: 'Email', value: selectedEmployee.email, icon: '✉' },
-                  { label: 'Phone', value: selectedEmployee.phone, icon: '☎' },
-                  { label: 'Position', value: selectedEmployee.position, icon: '💼' },
-                  { label: 'Role', value: selectedEmployee.role, capitalize: true, icon: '🏷' },
-                  { label: 'Age', value: selectedEmployee.age, icon: '🔢' },
-                  { label: 'Date of Birth', value: selectedEmployee.dob, icon: '📅' },
-                  { label: 'Sex', value: selectedEmployee.sex, icon: '👤' },
-                  { label: 'Address', value: selectedEmployee.address, icon: '📍' },
-                  { label: 'Shift', value: selectedEmployee.shift?.shift_name, icon: '🕐' },
+                  { label: 'Email', value: selectedEmployee.email, Icon: FaEnvelope },
+                  { label: 'Phone', value: selectedEmployee.phone, Icon: FaPhone },
+                  { label: 'Position', value: selectedEmployee.position, Icon: FaBriefcase },
+                  { label: 'Role', value: selectedEmployee.role, capitalize: true, Icon: FaIdBadge },
+                  { label: 'Age', value: selectedEmployee.age, Icon: FaBirthdayCake },
+                  { label: 'Date of Birth', value: selectedEmployee.dob, Icon: FaCalendarAlt },
+                  { label: 'Sex', value: selectedEmployee.sex, Icon: FaVenusMars },
+                  { label: 'Shift', value: selectedEmployee.shift?.shift_name, Icon: FaClock },
+                  // Full width so the grid never ends on a dangling empty cell
+                  { label: 'Address', value: selectedEmployee.address, Icon: FaMapMarkerAlt, full: true },
                 ].map((item) => (
-                  <div key={item.label} style={S.detailItem}>
+                  <div key={item.label} style={{ ...S.detailItem, ...(item.full ? S.detailItemFull : {}) }}>
                     <div style={S.detailTop}>
-                      <span style={S.detailIcon}>{item.icon}</span>
+                      <item.Icon size={11} color="#94a3b8" />
                       <span style={S.detailLabel}>{item.label}</span>
                     </div>
                     <span style={{ ...S.detailValue, textTransform: item.capitalize ? 'capitalize' : 'none' }}>
@@ -665,6 +703,26 @@ const EmployeeManagement = () => {
                     </span>
                   </div>
                 ))}
+              </div>
+
+              {/* Footer actions */}
+              <div style={S.detailActions}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEmployee(null)}
+                  style={S.btnCancel}
+                  className="btn-cancel"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEditingEmployee(selectedEmployee); setSelectedEmployee(null); }}
+                  style={S.btnPrimary}
+                  className="btn-primary"
+                >
+                  <FaEdit size={12} style={{ marginRight: 7 }} /> Edit Employee
+                </button>
               </div>
             </div>
           </div>
@@ -680,7 +738,26 @@ const EmployeeManagement = () => {
             setEditingEmployee(null);
             fetchEmployees();
           }}
+          onFaceRegistered={fetchEmployees}
         />
+      )}
+
+      {/* ─── FACE REGISTRATION (from details modal) ─── */}
+      {/* Own stacking context above the details overlay (z-index 1000) - the
+          face modal only carries z-index 100 internally. */}
+      {faceTarget && (
+        <div style={{ position: 'relative', zIndex: 1100 }}>
+        <FaceRegistrationModal
+          userId={faceTarget.id}
+          userName={faceTarget.name}
+          isOpen={true}
+          onClose={() => setFaceTarget(null)}
+          onRegistrationComplete={() => {
+            setFaceTarget(null);
+            fetchEmployees();
+          }}
+        />
+        </div>
       )}
     </div>
   );
@@ -909,13 +986,13 @@ const S = {
     padding: '4px 10px',
     borderRadius: 20,
   },
-  facePillYes: { background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' },
-  facePillNo: { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' },
+  facePillYes: { background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' },
+  facePillNo: { background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' },
   faceDot: (active) => ({
     width: 6,
     height: 6,
     borderRadius: '50%',
-    background: active ? '#16a34a' : '#dc2626',
+    background: active ? '#16a34a' : '#d97706',
   }),
 
   // Actions
@@ -1018,27 +1095,74 @@ const S = {
   },
   modalBody: { padding: '20px 24px 24px' },
 
-  // Face banner
-  faceBanner: {
+  // Face card (details modal)
+  faceCard: {
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    padding: '9px 14px',
-    borderRadius: 8,
+    gap: 14,
+    padding: '14px 16px',
+    borderRadius: 12,
     marginBottom: 18,
+  },
+  faceCardYes: { background: '#f6fdf9', border: '1px solid #bbf7d0' },
+  faceCardNo: { background: '#fffbeb', border: '1px solid #fde68a' },
+  faceIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  faceIconWrapYes: { background: '#dcfce7', border: '1px solid #bbf7d0' },
+  faceIconWrapNo: { background: '#fef3c7', border: '1px solid #fde68a' },
+  faceTextWrap: { flex: 1, minWidth: 0 },
+  faceTitleRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  faceTitle: { fontSize: 13.5, fontWeight: 700, color: '#1e293b' },
+  faceStatusPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    fontSize: 10.5,
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: 20,
+    textTransform: 'uppercase',
+    letterSpacing: '0.4px',
+  },
+  faceStatusPillYes: { background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' },
+  faceStatusPillNo: { background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' },
+  faceBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '8px 16px',
+    borderRadius: 8,
     fontSize: 12.5,
     fontWeight: 600,
-  },
-  faceBannerYes: { background: '#f0fdf4', border: '1px solid #bbf7d0' },
-  faceBannerNo: { background: '#fef2f2', border: '1px solid #fecaca' },
-  faceBannerDot: (active) => ({
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    background: active ? '#16a34a' : '#dc2626',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
     flexShrink: 0,
-  }),
-  faceBannerText: (active) => ({ color: active ? '#16a34a' : '#dc2626' }),
+    whiteSpace: 'nowrap',
+  },
+  faceBtnPrimary: {
+    border: 'none',
+    background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+    color: '#fff',
+    boxShadow: '0 2px 8px rgba(37,99,235,0.32)',
+  },
+  faceBtnGhost: {
+    border: '1px solid #bbf7d0',
+    background: '#fff',
+    color: '#15803d',
+  },
+  faceHint: {
+    margin: '4px 0 0',
+    fontSize: 11.5,
+    lineHeight: 1.5,
+    color: '#64748b',
+    fontWeight: 500,
+  },
 
   // Detail grid
   detailGrid: {
@@ -1057,8 +1181,8 @@ const S = {
     flexDirection: 'column',
     gap: 4,
   },
+  detailItemFull: { gridColumn: '1 / -1' },
   detailTop: { display: 'flex', alignItems: 'center', gap: 6 },
-  detailIcon: { fontSize: 12 },
   detailLabel: {
     fontSize: 10.5,
     fontWeight: 700,
@@ -1066,7 +1190,37 @@ const S = {
     textTransform: 'uppercase',
     letterSpacing: '0.6px',
   },
-  detailValue: { fontSize: 13, fontWeight: 500, color: '#1e293b', paddingLeft: 18 },
+  detailValue: {
+    fontSize: 13,
+    fontWeight: 500,
+    color: '#1e293b',
+    paddingLeft: 17,
+    wordBreak: 'break-word',
+  },
+
+  // Details modal footer
+  detailActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 18,
+    paddingTop: 16,
+    borderTop: '1px solid #f1f5f9',
+  },
+  btnPrimary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '8px 20px',
+    borderRadius: 8,
+    border: 'none',
+    background: 'linear-gradient(135deg, #1e40af, #2563eb)',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(37,99,235,0.32)',
+    transition: 'all 0.18s',
+  },
 
   // ─── CONFIRM MODAL ───
   confirmModal: {
@@ -1157,6 +1311,21 @@ const CSS = `
   }
   .close-btn:hover { background: #f1f5f9; color: #475569; }
   .btn-cancel:hover { background: #f1f5f9; }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    transform: translateY(-1px);
+  }
+  .face-btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    transform: translateY(-1px);
+  }
+  .face-btn-ghost:hover {
+    background: #f0fdf4;
+    border-color: #86efac;
+    transform: translateY(-1px);
+  }
   .btn-danger:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(220,38,38,0.4);

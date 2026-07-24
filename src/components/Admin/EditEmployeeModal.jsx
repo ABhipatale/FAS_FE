@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaSave, FaUserEdit } from 'react-icons/fa';
+import { FaTimes, FaSave, FaUserEdit, FaCamera, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
  import FaceRegistrationModal from '../Face/FaceRegistrationModal';
 import { apiCall } from '../../config/api';
 import API_CONFIG from '../../config/api';
+import { hasFaceRegistered } from '../../utils/face';
 
-const EditEmployeeModal = ({ employee, onClose, onUpdateComplete }) => {
+const EditEmployeeModal = ({ employee, onClose, onUpdateComplete, onFaceRegistered }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [showFaceModal, setShowFaceModal] = useState(false);
   const [shifts, setShifts] = useState([]);
-  
+  // Mirrors the employee prop, but also flips locally the moment a face is
+  // registered from inside this modal - no refetch needed to update the banner.
+  const [faceRegistered, setFaceRegistered] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -28,6 +32,7 @@ const EditEmployeeModal = ({ employee, onClose, onUpdateComplete }) => {
   useEffect(() => {
     fetchShifts();
     if (employee) {
+      setFaceRegistered(hasFaceRegistered(employee));
       setFormData({
         name: employee.name || '',
         email: employee.email || '',
@@ -116,13 +121,15 @@ const EditEmployeeModal = ({ employee, onClose, onUpdateComplete }) => {
   };
 
   const handleFaceRegistrationComplete = () => {
-    setMessage('Face registered successfully!');
-    // Reopen the edit modal after successful registration
-    setTimeout(() => {
-      if (onUpdateComplete) {
-        onUpdateComplete();
-      }
-    }, 500);
+    // Flip the banner straight away and close only the camera modal, so the
+    // admin can keep editing the rest of the form.
+    setFaceRegistered(true);
+    setError(null);
+    setMessage(faceRegistered ? 'Face updated successfully!' : 'Face registered successfully!');
+    setShowFaceModal(false);
+    if (onFaceRegistered) {
+      onFaceRegistered();
+    }
   };
 
   const openFaceRegistration = () => {
@@ -133,12 +140,9 @@ const EditEmployeeModal = ({ employee, onClose, onUpdateComplete }) => {
     setShowFaceModal(false);
   };
 
-  const hasFaceRegistered = employee && employee.face_descriptor && 
-                             Array.isArray(employee.face_descriptor) && 
-                             employee.face_descriptor.length > 0;
-
   return (
     <>
+      <style>{CSS}</style>
       <div style={S.overlay} className="modal-overlay">
         <div style={{ ...S.modal, maxWidth: 720 }} className="anim-modal">
           {/* Header */}
@@ -173,17 +177,36 @@ const EditEmployeeModal = ({ employee, onClose, onUpdateComplete }) => {
             )}
 
             {/* Face Registration Status Banner */}
-            <div style={{ ...S.faceBanner, ...(hasFaceRegistered ? S.faceBannerYes : S.faceBannerNo) }}>
-              <span style={S.faceBannerDot(hasFaceRegistered)}></span>
-              <span style={S.faceBannerText(hasFaceRegistered)}>
-                Face Recognition — {hasFaceRegistered ? 'Registered' : 'Not Registered'}
-              </span>
-              <button 
+            <div style={{ ...S.faceCard, ...(faceRegistered ? S.faceCardYes : S.faceCardNo) }}>
+              <div style={{ ...S.faceIconWrap, ...(faceRegistered ? S.faceIconWrapYes : S.faceIconWrapNo) }}>
+                {faceRegistered
+                  ? <FaCheckCircle size={17} color="#16a34a" />
+                  : <FaExclamationCircle size={17} color="#d97706" />}
+              </div>
+
+              <div style={S.faceTextWrap}>
+                <div style={S.faceTitleRow}>
+                  <span style={S.faceTitle}>Face Recognition</span>
+                  <span style={{ ...S.faceStatusPill, ...(faceRegistered ? S.faceStatusPillYes : S.faceStatusPillNo) }}>
+                    <span style={S.faceDot(faceRegistered)}></span>
+                    {faceRegistered ? 'Registered' : 'Not Registered'}
+                  </span>
+                </div>
+                <p style={S.faceHint}>
+                  {faceRegistered
+                    ? 'This employee can be identified at the attendance kiosk. Re-scan to replace the stored face.'
+                    : 'Attendance by face is unavailable until a scan is captured for this employee.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
                 onClick={openFaceRegistration}
-                style={S.faceRegisterBtn}
-                className="face-register-btn"
+                style={{ ...S.faceBtn, ...(faceRegistered ? S.faceBtnGhost : S.faceBtnPrimary) }}
+                className={faceRegistered ? 'face-btn-ghost' : 'face-btn-primary'}
               >
-                {hasFaceRegistered ? 'Update Face' : 'Register Face'}
+                <FaCamera size={12} style={{ marginRight: 7 }} />
+                {faceRegistered ? 'Update Face' : 'Register Face'}
               </button>
             </div>
 
@@ -456,39 +479,79 @@ const S = {
   },
   errorIcon: { fontSize: 16, fontWeight: 700 },
   
-  // Face banner
-  faceBanner: {
+  // Face card
+  faceCard: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    padding: '12px 16px',
-    borderRadius: 8,
-    marginBottom: 20,
-    fontSize: 13,
-    fontWeight: 600,
+    gap: 14,
+    padding: '14px 16px',
+    borderRadius: 12,
+    marginBottom: 22,
   },
-  faceBannerYes: { background: '#f0fdf4', border: '1px solid #bbf7d0' },
-  faceBannerNo: { background: '#fef2f2', border: '1px solid #fecaca' },
-  faceBannerDot: (active) => ({
-    width: 10,
-    height: 10,
-    borderRadius: '50%',
-    background: active ? '#16a34a' : '#dc2626',
+  faceCardYes: { background: '#f6fdf9', border: '1px solid #bbf7d0' },
+  faceCardNo: { background: '#fffbeb', border: '1px solid #fde68a' },
+  faceIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     flexShrink: 0,
+  },
+  faceIconWrapYes: { background: '#dcfce7', border: '1px solid #bbf7d0' },
+  faceIconWrapNo: { background: '#fef3c7', border: '1px solid #fde68a' },
+  faceTextWrap: { flex: 1, minWidth: 0 },
+  faceTitleRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  faceTitle: { fontSize: 13.5, fontWeight: 700, color: '#1e293b' },
+  faceStatusPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    fontSize: 10.5,
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: 20,
+    textTransform: 'uppercase',
+    letterSpacing: '0.4px',
+  },
+  faceStatusPillYes: { background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' },
+  faceStatusPillNo: { background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' },
+  faceDot: (active) => ({
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+    background: active ? '#16a34a' : '#d97706',
   }),
-  faceBannerText: (active) => ({ color: active ? '#16a34a' : '#dc2626', flex: 1 }),
-  faceRegisterBtn: {
-    padding: '6px 14px',
-    borderRadius: 6,
-    border: 'none',
-    background: '#2563eb',
-    color: '#fff',
-    fontSize: 12,
+  faceHint: {
+    margin: '4px 0 0',
+    fontSize: 11.5,
+    lineHeight: 1.5,
+    color: '#64748b',
+    fontWeight: 500,
+  },
+  faceBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '8px 16px',
+    borderRadius: 8,
+    fontSize: 12.5,
     fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.2s',
     flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
+  faceBtnPrimary: {
+    border: 'none',
+    background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+    color: '#fff',
+    boxShadow: '0 2px 8px rgba(37,99,235,0.32)',
+  },
+  faceBtnGhost: {
+    border: '1px solid #bbf7d0',
+    background: '#fff',
+    color: '#15803d',
   },
   
   // Form
@@ -578,8 +641,14 @@ const CSS = `
   }
   .modal-overlay { animation: fadeIn 0.18s ease; }
   .anim-modal { animation: modalIn 0.22s cubic-bezier(.4,0,.2,1); }
-  .face-register-btn:hover {
-    background: #1d4ed8;
+  .face-btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    transform: translateY(-1px);
+  }
+  .face-btn-ghost:hover {
+    background: #f0fdf4;
+    border-color: #86efac;
     transform: translateY(-1px);
   }
   .btn-cancel:hover { background: #f1f5f9; }
