@@ -42,8 +42,18 @@ const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
 // Main App wrapper with sidebar for authenticated users
 const AppWrapper = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+  // Desktop sidebar collapse, remembered across reloads
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('sidebarCollapsed') === 'true'
+  );
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      localStorage.setItem('sidebarCollapsed', String(!prev));
+      return !prev;
+    });
+  };
+
   if (!isAuthenticated) {
     return <>{children}</>;
   }
@@ -61,7 +71,7 @@ const AppWrapper = ({ children }) => {
     return (
       <div className="flex">
         {/* No sidebar for employees */}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           {/* No navbar for employees if you want to hide it completely */}
           <main className="p-4">
             {children}
@@ -73,8 +83,15 @@ const AppWrapper = ({ children }) => {
   
   return (
     <div className="flex">
-      <Sidebar user={user} isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-      <div className="flex-1 lg:ml-64">
+      <Sidebar user={user} collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
+      {/* min-w-0 is required: without it this flex item refuses to shrink below
+          its content, so a wide table widens the page and scrolls under the
+          fixed sidebar instead of scrolling inside its own container. */}
+      <div
+        className={`min-w-0 flex-1 transition-all duration-300 ${
+          collapsed ? 'lg:ml-16' : 'lg:ml-64'
+        }`}
+      >
         {/* <Navbar /> */}
         <main className="p-4">
           {children}
@@ -86,7 +103,7 @@ const AppWrapper = ({ children }) => {
 
 // Public route that redirects to dashboard if authenticated
 const PublicRoute = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   
   if (isAuthenticated) {
     return <Navigate to="/dashboard" />;
