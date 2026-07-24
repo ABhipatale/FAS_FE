@@ -962,14 +962,20 @@
 
 //new
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG, { apiCall } from '../../config/api';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  buildReportRows,
+  describePeriod,
+  exportAttendanceCsv,
+  exportAttendancePdf,
+} from '../../utils/attendanceExport';
 
 export default function EnhancedDashboard() {
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState({
@@ -980,12 +986,27 @@ export default function EnhancedDashboard() {
   const [attendanceData, setAttendanceData] = useState([]);
   const [filter, setFilter] = useState('today');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  // Only the range that was actually applied drives the query - typing in the
+  // date inputs shouldn't refetch on every keystroke.
+  const [appliedRange, setAppliedRange] = useState({ start: '', end: '' });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [exporting, setExporting] = useState(null); // 'csv' | 'pdf' | null
+  const [exportError, setExportError] = useState('');
+
+  // filter + applied custom range -> query string shared by the table and exports
+  const buildQuery = useCallback(() => {
+    const params = new URLSearchParams({ filter });
+    if (filter === 'custom' && appliedRange.start && appliedRange.end) {
+      params.set('start_date', appliedRange.start);
+      params.set('end_date', appliedRange.end);
+    }
+    return params.toString();
+  }, [filter, appliedRange]);
 
   useEffect(() => {
     fetchDashboardData();
-  }, [filter]);
+  }, [filter, appliedRange]);
 
   const fetchDashboardData = async () => {
     try {
@@ -996,7 +1017,7 @@ export default function EnhancedDashboard() {
         setStats(statsResponse.data.data.stats);
       }
 
-      const rawAttendanceResponse = await apiCall(`${API_CONFIG.ENDPOINTS.ATTENDANCE_RAW}?filter=${filter}`);
+      const rawAttendanceResponse = await apiCall(`${API_CONFIG.ENDPOINTS.ATTENDANCE_RAW}?${buildQuery()}`);
       if (rawAttendanceResponse.data.success) {
         const transformedData = rawAttendanceResponse.data.data.map(record => ({
           id: record.user ? record.user.id : null,
@@ -1040,9 +1061,60 @@ export default function EnhancedDashboard() {
   }, []);
 
   const handleDateFilter = () => {
-    if (dateRange.start && dateRange.end) {
-      setFilter('custom');
-      fetchDashboardData();
+    if (!dateRange.start || !dateRange.end) {
+      setExportError('Pick both a From and a To date.');
+      return;
+    }
+    if (dateRange.start > dateRange.end) {
+      setExportError('"From" date must be on or before the "To" date.');
+      return;
+    }
+    setExportError('');
+    setAppliedRange({ ...dateRange });
+    setFilter('custom');
+  };
+
+  // Exports every employee for the selected period - deliberately ignores the
+  // search box, which only narrows the on-screen table.
+  const handleExport = async (type) => {
+    setExporting(type);
+    setExportError('');
+
+    try {
+      const [attendanceRes, usersRes] = await Promise.all([
+        apiCall(`${API_CONFIG.ENDPOINTS.ATTENDANCE_RAW}?${buildQuery()}`),
+        apiCall(API_CONFIG.ENDPOINTS.USERS),
+      ]);
+
+      if (!attendanceRes.data.success) {
+        throw new Error(attendanceRes.data.message || 'Could not load attendance data');
+      }
+
+      const employees = usersRes.data.success ? usersRes.data.data : [];
+      const rows = buildReportRows(attendanceRes.data.data, employees);
+
+      if (rows.length === 0) {
+        setExportError('No attendance data for the selected period.');
+        return;
+      }
+
+      const payload = {
+        rows,
+        filter,
+        range: appliedRange,
+        companyName: company?.name || user?.company?.name || '',
+      };
+
+      if (type === 'csv') {
+        exportAttendanceCsv(payload);
+      } else {
+        exportAttendancePdf(payload);
+      }
+    } catch (err) {
+      console.error('Export failed:', err);
+      setExportError(err.message || 'Export failed. Please try again.');
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -1409,39 +1481,63 @@ export default function EnhancedDashboard() {
 
 
   {/* Divider */}
-  <div className="border-t border-gray-100 mt-2 pt-2 space-y-1">
+  <div className="border-t border-gray-100 mt-2 pt-2 space-y-1.5">
 
-    {/* Add Employee */}
-   <button className="w-full flex items-center justify-between px-2 py-1.5 bg-[#22C55E] hover:bg-[#82ffb0] rounded-md group">
-    <div className="flex items-center gap-1.5 min-w-0">
-      <div className="w-4 h-4 bg-blue-200 rounded flex items-center justify-center flex-shrink-0">
-        <svg className="w-2.5 h-2.5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeWidth={2.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3M3 20a6 6 0 0112 0v1H3v-1z"/>
-        </svg>
-      </div>
-      <span className="text-[11px] font-semibold text-gray-900 whitespace-nowrap">
-        Add Employee
+    {/* Export report - always follows the filter above the table */}
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-[11px] font-bold text-gray-900 uppercase tracking-wide">
+        Export Report
+      </span>
+      <span className="text-[9px] text-gray-500 truncate" title={describePeriod(filter, appliedRange)}>
+        {describePeriod(filter, appliedRange)}
       </span>
     </div>
-    <span className="text-gray-500 text-xs">›</span>
-  </button>
-  
 
-  {/* Generate Reports */}
-  <button className="w-full flex items-center justify-between px-2 py-1.5 bg-[#8B5CF6] hover:bg-[#b694ff] rounded-md group">
-    <div className="flex items-center gap-1.5 min-w-0">
-      <div className="w-4 h-4 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
-        <svg className="w-2.5 h-2.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeWidth={2.5} d="M9 17v-2m3 2v-4m3 4v-6M7 21h10a2 2 0 002-2V7l-5-5H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-        </svg>
+    <button
+      type="button"
+      onClick={() => handleExport('pdf')}
+      disabled={exporting !== null}
+      className="w-full flex items-center justify-between px-2 py-1.5 bg-[#8B5CF6] hover:bg-[#7c4dff] disabled:opacity-60 disabled:cursor-not-allowed rounded-md transition-colors"
+    >
+      <div className="flex items-center gap-1.5 min-w-0">
+        <div className="w-4 h-4 bg-white/90 rounded flex items-center justify-center flex-shrink-0">
+          <svg className="w-2.5 h-2.5 text-[#8B5CF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeWidth={2.5} d="M9 17v-2m3 2v-4m3 4v-6M7 21h10a2 2 0 002-2V7l-5-5H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <span className="text-[11px] font-semibold text-white whitespace-nowrap">
+          {exporting === 'pdf' ? 'Preparing PDF…' : 'Export PDF'}
+        </span>
       </div>
-      <span className="text-[11px] font-semibold text-gray-900 whitespace-nowrap">
-        Generate Reports
-      </span>
-    </div>
-    <span className="text-gray-500 text-xs">›</span>
-  </button>
+      <span className="text-white/80 text-xs">›</span>
+    </button>
 
+    <button
+      type="button"
+      onClick={() => handleExport('csv')}
+      disabled={exporting !== null}
+      className="w-full flex items-center justify-between px-2 py-1.5 bg-[#0F9D58] hover:bg-[#0c8149] disabled:opacity-60 disabled:cursor-not-allowed rounded-md transition-colors"
+    >
+      <div className="flex items-center gap-1.5 min-w-0">
+        <div className="w-4 h-4 bg-white/90 rounded flex items-center justify-center flex-shrink-0">
+          <svg className="w-2.5 h-2.5 text-[#0F9D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </div>
+        <span className="text-[11px] font-semibold text-white whitespace-nowrap">
+          {exporting === 'csv' ? 'Preparing CSV…' : 'Export CSV'}
+        </span>
+      </div>
+      <span className="text-white/80 text-xs">›</span>
+    </button>
+
+    <p className="text-[9px] text-gray-500 leading-snug">
+      All employees in the selected period, including anyone with no punch.
+    </p>
+
+    {exportError && (
+      <p className="text-[9px] font-semibold text-rose-600 leading-snug">{exportError}</p>
+    )}
 
   </div>
 </motion.div>
@@ -1466,13 +1562,20 @@ export default function EnhancedDashboard() {
                   <span className="text-sm font-semibold text-gray-900">Filter:</span>
                   <select
                     value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
+                    onChange={(e) => {
+                      // Leaving the custom range drops it, so the period label
+                      // and the exports can never disagree with the table.
+                      setAppliedRange({ start: '', end: '' });
+                      setExportError('');
+                      setFilter(e.target.value);
+                    }}
                     className="bg-blue-100 border border-gray-900 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent min-w-[100px]"
                   >
                     <option value="today">Today</option>
                     <option value="yesterday">Yesterday</option>
-                    <option value="week">Last Week</option>
+                    <option value="week">Last 7 Days</option>
                     <option value="month">This Month</option>
+                    <option value="custom" disabled>Custom Range</option>
                   </select>
                 </div>
               </div>
