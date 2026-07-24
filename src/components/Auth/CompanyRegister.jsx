@@ -1012,7 +1012,9 @@ const CompanyManagement = () => {
   );
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    // No max-width: the box fills whatever the layout gives it, so collapsing
+    // the sidebar actually widens the table instead of adding empty margin.
+    <div className="w-full">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -1133,7 +1135,10 @@ const CompanyManagement = () => {
                   <th scope="col" className="px-5 py-3 font-medium">Address</th>
                   <th scope="col" className="px-5 py-3 font-medium">Status</th>
                   <th scope="col" className="px-5 py-3 font-medium">Registered</th>
-                  <th scope="col" className="px-5 py-3 text-right font-medium">Actions</th>
+                  {/* Pinned right so the buttons stay reachable when the table scrolls */}
+                  <th scope="col" className="sticky right-0 bg-slate-50 px-5 py-3 text-right font-medium shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.12)]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1143,7 +1148,7 @@ const CompanyManagement = () => {
                   const isOwnCompany = ownCompany?.id === company.id;
 
                   return (
-                  <tr key={company.id} className="border-t border-slate-100 transition hover:bg-slate-50/70">
+                  <tr key={company.id} className="group border-t border-slate-100 transition hover:bg-slate-50">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-semibold text-indigo-700">
@@ -1180,7 +1185,7 @@ const CompanyManagement = () => {
                     <td className="whitespace-nowrap px-5 py-4 text-slate-600">
                       {formatDate(company.created_at)}
                     </td>
-                    <td className="whitespace-nowrap px-5 py-4">
+                    <td className="sticky right-0 whitespace-nowrap bg-white px-5 py-4 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.12)] transition-colors group-hover:bg-slate-50">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
