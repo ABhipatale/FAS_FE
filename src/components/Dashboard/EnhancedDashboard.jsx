@@ -1103,6 +1103,7 @@ export default function EnhancedDashboard() {
         filter,
         range: appliedRange,
         companyName: company?.name || user?.company?.name || '',
+        companyLogo: company?.logo || '',
       };
 
       if (type === 'csv') {

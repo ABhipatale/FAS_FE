@@ -5,6 +5,7 @@
 // in the period still show up in the report instead of silently disappearing.
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { isPdfSafeLogo } from './companyLogo';
 
 export const FILTER_LABELS = {
   today: 'Today',
@@ -184,21 +185,38 @@ export const exportAttendanceCsv = ({ rows, filter, range, companyName }) => {
   );
 };
 
-export const exportAttendancePdf = ({ rows, filter, range, companyName }) => {
+export const exportAttendancePdf = ({ rows, filter, range, companyName, companyLogo }) => {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const totals = summarise(rows);
 
+  // Company logo in the header, scaled into a 46pt box. Anything jsPDF can't
+  // rasterise (SVG) is skipped rather than blowing up the whole export.
+  let textLeft = 40;
+  if (isPdfSafeLogo(companyLogo)) {
+    try {
+      const props = doc.getImageProperties(companyLogo);
+      const box = 46;
+      const scale = Math.min(box / props.width, box / props.height);
+      const width = props.width * scale;
+      const height = props.height * scale;
+      doc.addImage(companyLogo, 40, 30, width, height);
+      textLeft = 40 + width + 14;
+    } catch (err) {
+      console.warn('Skipping company logo in PDF:', err);
+    }
+  }
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(30, 41, 59);
-  doc.text('Attendance Report', 40, 44);
+  doc.text('Attendance Report', textLeft, 44);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(100, 116, 139);
-  doc.text(companyName || 'All Employees', 40, 62);
-  doc.text(describePeriod(filter, range), 40, 77);
+  doc.text(companyName || 'All Employees', textLeft, 62);
+  doc.text(describePeriod(filter, range), textLeft, 77);
   doc.text(`Generated: ${new Date().toLocaleString('en-GB')}`, pageWidth - 40, 62, { align: 'right' });
   doc.text(
     `Employees: ${totals.employees}   Records: ${totals.records}   Present: ${totals.present}   Late: ${totals.late}   Absent: ${totals.absent}`,

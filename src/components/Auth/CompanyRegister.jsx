@@ -5,9 +5,11 @@ import {
   FiEye, FiEyeOff, FiArrowRight, FiArrowLeft, FiAlertCircle,
   FiCheck, FiCheckCircle, FiShield, FiPlus, FiSearch, FiX,
   FiRefreshCw, FiUsers, FiInbox, FiEdit2, FiPower, FiSave,
+  FiImage, FiUpload, FiTrash2,
 } from 'react-icons/fi';
 import API_CONFIG from '../../config/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { fileToLogoDataUrl, LOGO_ACCEPT_ATTR, LOGO_MAX_PIXELS } from '../../utils/companyLogo';
 
 const STEPS = [
   { id: 1, label: 'Company', hint: 'Organisation details' },
@@ -19,6 +21,7 @@ const EMPTY_FORM = {
   company_email: '',
   company_address: '',
   company_phone: '',
+  company_logo: '',
   admin_name: '',
   admin_email: '',
   admin_password: '',
@@ -104,6 +107,101 @@ const inputClass = (error) =>
      ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10'
      : 'border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10'}`;
 
+/* ---------------------------------------------------------- LogoPicker */
+
+/**
+ * Picks a company logo and hands back a resized base64 data URI. The logo is
+ * what the sidebar, the company list and the attendance PDF all render, so
+ * `value` is stored on the company record rather than as an uploaded file.
+ */
+const LogoPicker = ({ id, value, name, error, disabled, onChange }) => {
+  const [busy, setBusy] = useState(false);
+  const [localError, setLocalError] = useState('');
+
+  const handleFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // let the same file be re-picked after a removal
+    if (!file) return;
+
+    setBusy(true);
+    setLocalError('');
+    try {
+      onChange(await fileToLogoDataUrl(file));
+    } catch (err) {
+      setLocalError(err.message || 'Could not use that image.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const shown = localError || error;
+
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 flex items-center justify-between text-sm font-medium text-slate-700">
+        <span>Company logo</span>
+        <span className="text-xs font-normal text-slate-400">Optional</span>
+      </label>
+
+      <div
+        className={`flex items-center gap-4 rounded-xl border p-3.5 transition ${
+          shown ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-slate-50'
+        }`}
+      >
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+          {value ? (
+            <img src={value} alt="" className="h-full w-full object-contain p-1" />
+          ) : (
+            <span className="text-xs font-semibold text-slate-400">{initials(name)}</span>
+          )}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <label
+              htmlFor={id}
+              className={`flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition ${
+                disabled || busy ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-slate-50'
+              }`}
+            >
+              {busy
+                ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                : <FiUpload className="h-3.5 w-3.5" />}
+              {value ? 'Replace' : 'Upload logo'}
+            </label>
+
+            {value && (
+              <button
+                type="button"
+                onClick={() => { setLocalError(''); onChange(''); }}
+                disabled={disabled || busy}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-red-600 disabled:opacity-50"
+              >
+                <FiTrash2 className="h-3.5 w-3.5" />
+                Remove
+              </button>
+            )}
+          </div>
+
+          <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${shown ? 'font-medium text-red-600' : 'text-slate-400'}`}>
+            {shown ? <FiAlertCircle className="h-3.5 w-3.5 shrink-0" /> : <FiImage className="h-3.5 w-3.5 shrink-0" />}
+            {shown || `PNG, JPG, WEBP or SVG — resized to ${LOGO_MAX_PIXELS}px automatically.`}
+          </p>
+        </div>
+
+        <input
+          id={id}
+          type="file"
+          accept={LOGO_ACCEPT_ATTR}
+          disabled={disabled || busy}
+          onChange={handleFile}
+          className="sr-only"
+        />
+      </div>
+    </div>
+  );
+};
+
 /* ------------------------------------------------- Registration modal */
 
 const CompanyFormModal = ({ open, onClose, onCreated }) => {
@@ -188,6 +286,7 @@ const CompanyFormModal = ({ open, onClose, onCreated }) => {
             company_email: formData.company_email,
             company_address: formData.company_address,
             company_phone: formData.company_phone,
+            company_logo: formData.company_logo || null,
             admin_name: formData.admin_name,
             admin_email: formData.admin_email,
             admin_password: formData.admin_password,
@@ -207,7 +306,7 @@ const CompanyFormModal = ({ open, onClose, onCreated }) => {
         });
         setErrors(backendErrors);
         // Jump back to the step that owns the failing field.
-        if (['company_name', 'company_email', 'company_address', 'company_phone']
+        if (['company_name', 'company_email', 'company_address', 'company_phone', 'company_logo']
           .some((k) => backendErrors[k])) setStep(1);
       } else {
         setErrors({ general: data.message || 'Registration failed. Please try again.' });
@@ -379,6 +478,23 @@ const CompanyFormModal = ({ open, onClose, onCreated }) => {
                           className={inputClass(errors.company_address)}
                         />
                       </Field>
+
+                      <div className="sm:col-span-2">
+                        <LogoPicker
+                          id="company_logo"
+                          value={formData.company_logo}
+                          name={formData.company_name}
+                          error={errors.company_logo}
+                          disabled={loading}
+                          onChange={(logo) => {
+                            setFormData((prev) => ({ ...prev, company_logo: logo }));
+                            if (errors.company_logo) setErrors((prev) => ({ ...prev, company_logo: '' }));
+                          }}
+                        />
+                        <p className="mt-2 text-xs text-slate-400">
+                          Shown in this company&apos;s sidebar, in the company list and on exported attendance reports.
+                        </p>
+                      </div>
 
                       <div className="flex flex-col-reverse gap-3 sm:col-span-2 sm:flex-row sm:justify-end">
                         <button
@@ -564,7 +680,7 @@ const CompanyFormModal = ({ open, onClose, onCreated }) => {
 /* --------------------------------------------------------- Edit modal */
 
 const CompanyEditModal = ({ company, token, onClose, onSaved }) => {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', status: 'active' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', logo: '', status: 'active' });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -576,6 +692,7 @@ const CompanyEditModal = ({ company, token, onClose, onSaved }) => {
       email: company.email || '',
       phone: company.phone || '',
       address: company.address || '',
+      logo: company.logo || '',
       status: company.status === 'inactive' ? 'inactive' : 'active',
     });
     setErrors({});
@@ -622,6 +739,7 @@ const CompanyEditModal = ({ company, token, onClose, onSaved }) => {
             email: form.email,
             phone: form.phone,
             address: form.address,
+            logo: form.logo || null,
             status: form.status,
           }),
         }
@@ -751,6 +869,20 @@ const CompanyEditModal = ({ company, token, onClose, onSaved }) => {
                     className={inputClass(errors.address)}
                   />
                 </Field>
+
+                <div className="sm:col-span-2">
+                  <LogoPicker
+                    id="edit_logo"
+                    value={form.logo}
+                    name={form.name}
+                    error={errors.logo}
+                    disabled={saving}
+                    onChange={(logo) => {
+                      setForm((prev) => ({ ...prev, logo }));
+                      if (errors.logo) setErrors((prev) => ({ ...prev, logo: '' }));
+                    }}
+                  />
+                </div>
 
                 <Field id="edit_status" label="Status" icon={FiPower} error={errors.status} className="sm:col-span-2">
                   <select
@@ -885,7 +1017,7 @@ const SkeletonRow = () => (
 const CompanyManagement = () => {
   // `company` here is the signed-in superadmin's own company - the backend
   // refuses to deactivate it, so the row is marked and its button disabled.
-  const { token, company: ownCompany } = useAuth();
+  const { token, company: ownCompany, getCompanyDetails } = useAuth();
 
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -952,6 +1084,9 @@ const CompanyManagement = () => {
     setEditing(null);
     setActionError('');
     if (message) setToast(message);
+    // Editing your own company (a new logo, say) must re-brand the sidebar
+    // straight away, not on the next sign-in.
+    if (ownCompany?.id === updated.id) getCompanyDetails();
   };
 
   const setStatus = async (company, status) => {
@@ -1151,9 +1286,19 @@ const CompanyManagement = () => {
                   <tr key={company.id} className="group border-t border-slate-100 transition hover:bg-slate-50">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-semibold text-indigo-700">
-                          {initials(company.name)}
-                        </span>
+                        {company.logo ? (
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                            <img
+                              src={company.logo}
+                              alt={`${company.name} logo`}
+                              className="h-full w-full object-contain p-0.5"
+                            />
+                          </span>
+                        ) : (
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-semibold text-indigo-700">
+                            {initials(company.name)}
+                          </span>
+                        )}
                         <div className="min-w-0">
                           <p className="flex items-center gap-2 truncate font-medium text-slate-900">
                             {company.name}

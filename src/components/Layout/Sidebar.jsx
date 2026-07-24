@@ -14,9 +14,22 @@ import { useAuth } from '../../contexts/AuthContext';
 const Sidebar = ({ user, collapsed = false, onToggleCollapse }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, company } = useAuth();
 
   const closeMobile = () => setMobileOpen(false);
+
+  // The signed-in company brands the sidebar; the product name is the fallback
+  // for accounts with no company or no logo uploaded yet.
+  const brandName = company?.name || 'Face Attendance System';
+  const brandLogo = company?.logo || '';
+  const brandInitials =
+    (company?.name || 'Face Attendance')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase() || 'FA';
 
   const isActive = (path) => location.pathname === path;
 
@@ -120,19 +133,38 @@ const Sidebar = ({ user, collapsed = false, onToggleCollapse }) => {
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
           ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}
       >
-        {/* Header */}
+        {/* Header - company branded */}
         <div className={`shrink-0 border-b border-gray-700 p-4 ${collapsed ? 'lg:px-2' : ''}`}>
           <div className={collapsed ? 'lg:hidden' : ''}>
-            <h1 className="text-xl font-bold">Face Attendance System</h1>
-            <p className="mt-1 truncate text-sm text-gray-400">Welcome, {user?.name}</p>
+            <div className="flex items-center gap-3">
+              {brandLogo ? (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+                  <img src={brandLogo} alt="" className="h-full w-full object-contain p-1" />
+                </span>
+              ) : (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
+                  {brandInitials}
+                </span>
+              )}
+              <h1 className="min-w-0 truncate text-lg font-bold leading-tight" title={brandName}>
+                {brandName}
+              </h1>
+            </div>
+            <p className="mt-2 truncate text-sm text-gray-400">Welcome, {user?.name}</p>
           </div>
 
           {/* Compact mark shown in place of the title when collapsed */}
           {collapsed && (
-            <div className="hidden justify-center lg:flex" title="Face Attendance System">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
-                FA
-              </span>
+            <div className="hidden justify-center lg:flex" title={brandName}>
+              {brandLogo ? (
+                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white">
+                  <img src={brandLogo} alt="" className="h-full w-full object-contain p-0.5" />
+                </span>
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
+                  {brandInitials}
+                </span>
+              )}
             </div>
           )}
         </div>
