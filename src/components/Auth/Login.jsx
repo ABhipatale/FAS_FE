@@ -28,16 +28,18 @@ export default function Login() {
     setError("");
     setMessage("");
 
-    const { success, message: responseMessage } = await login(
+    const { success, message: responseMessage, user } = await login(
       formData.email,
       formData.password
     );
 
     if (success) {
       setMessage(responseMessage);
-      // Redirect to dashboard after successful login
+      // Superadmins land on the cross-company console, everyone else on their
+      // own company dashboard.
+      const target = user?.role === 'superadmin' ? '/superadmin' : '/dashboard';
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate(target);
       }, 1500);
     } else {
       setError(responseMessage);

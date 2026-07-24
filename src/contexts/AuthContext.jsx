@@ -227,7 +227,9 @@ export const AuthProvider = ({ children }) => {
           payload: { user, token, company },
         });
 
-        return { success: true, message: data.message };
+        // `user` is returned so callers can route by role without waiting for
+        // the context state to flush.
+        return { success: true, message: data.message, user };
       } else {
         const errorMessage = data.message || 'Login failed';
         dispatch({

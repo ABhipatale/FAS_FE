@@ -17,6 +17,7 @@ import EmployeeAttendanceDetail from './components/Dashboard/EmployeeAttendanceD
 import ShiftManagement from './components/Admin/ShiftManagement';
 import EmployeeManagement from './components/Admin/EmployeeManagement';
 import CompanyRegister from './components/Auth/CompanyRegister';
+import SuperAdminDashboard from './components/Admin/SuperAdminDashboard';
 
 // Custom protected route that checks user role
 const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -134,6 +135,17 @@ function App() {
             </PublicRoute>
           } />
           
+          {/* Superadmin system console - every company at a glance */}
+          <Route path="/superadmin" element={
+            <ProtectedRoute>
+              <RoleProtectedRoute allowedRoles={['superadmin']}>
+                <AppWrapper>
+                  <SuperAdminDashboard />
+                </AppWrapper>
+              </RoleProtectedRoute>
+            </ProtectedRoute>
+          } />
+
           <Route path="/company-register" element={
             <ProtectedRoute>
               <RoleProtectedRoute allowedRoles={['superadmin']}>

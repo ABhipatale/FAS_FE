@@ -42,6 +42,9 @@ const API_CONFIG = {
     // Dashboard
     DASHBOARD_STATS: '/dashboard/stats',
     ATTENDANCE_RAW: '/attendance/raw',
+
+    // Superadmin - cross-company system overview
+    SUPERADMIN_OVERVIEW: '/superadmin/overview',
   }
 };
 

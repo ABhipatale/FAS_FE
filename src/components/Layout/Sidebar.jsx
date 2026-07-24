@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   FaBars, FaTimes, FaTachometerAlt, FaUsers, FaCog, FaCalendarAlt,
-  FaUser, FaSignOutAlt, FaBuilding, FaAngleDoubleLeft, FaAngleDoubleRight,
+  FaUser, FaSignOutAlt, FaBuilding, FaAngleDoubleLeft, FaAngleDoubleRight, FaGlobe,
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -68,9 +68,14 @@ const Sidebar = ({ user, collapsed = false, onToggleCollapse }) => {
       }
     ];
 
-    // Add company management for super admins only
+    // Superadmins get the cross-company console first, then company management
     if (user?.role === 'superadmin') {
-      baseItems.splice(1, 0, {
+      baseItems.unshift({
+        name: 'System Overview',
+        icon: <FaGlobe />,
+        path: '/superadmin'
+      });
+      baseItems.splice(2, 0, {
         name: 'Company Management',
         icon: <FaBuilding />,
         path: '/company-register'
