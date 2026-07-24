@@ -5,7 +5,9 @@ const API_CONFIG = {
   
   ENDPOINTS: {
     // Companies
+    COMPANIES: '/companies',
     COMPANIES_REGISTER: '/companies/register',
+    COMPANY_BY_ID: (id) => `/companies/${id}`,
     COMPANY_DETAILS: '/company/details',
     COMPANY_UPDATE: '/company/update',
     
