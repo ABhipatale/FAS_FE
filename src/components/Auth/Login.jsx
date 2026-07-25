@@ -7,6 +7,7 @@ import {
 } from "react-icons/fi";
 import { useAuth } from "../../contexts/AuthContext";
 import InstallAppButton from "../InstallAppButton";
+import { homePathFor } from "../../config/roles";
 
 const REMEMBER_KEY = "loginEmail";
 
@@ -78,11 +79,11 @@ export default function Login() {
 
       setMessage(responseMessage);
       setRedirecting(true);
-      // Superadmins land on the cross-company console, everyone else on their
-      // own company dashboard.
-      const target = user?.role === 'superadmin' ? '/superadmin' : '/dashboard';
+      // Each role has its own home: kiosk accounts get the attendance screen,
+      // employees their own dashboard, superadmins the cross-company console.
+      const target = homePathFor(user?.role);
       setTimeout(() => {
-        navigate(target);
+        navigate(target, { replace: true });
       }, 1500);
     } else {
       setError(responseMessage);
@@ -361,7 +362,7 @@ export default function Login() {
                 </span>
                 <span>
                   <span className="block text-sm font-semibold text-slate-900">Employee sign in</span>
-                  <span className="block text-xs text-slate-500">Go straight to face attendance</span>
+                  <span className="block text-xs text-slate-500">View your attendance and hours</span>
                 </span>
               </span>
               <FiArrowRight className="h-4 w-4 shrink-0 text-slate-400" />

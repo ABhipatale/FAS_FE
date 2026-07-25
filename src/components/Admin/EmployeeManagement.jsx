@@ -326,7 +326,9 @@ const EmployeeManagement = () => {
       });
       const data = response.data;
       if (data.success) {
-        setEmployees(data.data);
+        // Attendance App logins are kiosk devices, not people - they belong in
+        // Settings, not in the employee roster.
+        setEmployees((data.data || []).filter((u) => u.role !== 'attendanceapp'));
         // Keep an open details modal pointed at the freshly loaded row, so its
         // face-registration status stays in sync. The edit modal is left alone
         // on purpose - re-seeding it would wipe unsaved changes.

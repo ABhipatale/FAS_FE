@@ -20,25 +20,22 @@ import CompanyRegister from './components/Auth/CompanyRegister';
 import SuperAdminDashboard from './components/Admin/SuperAdminDashboard';
 import Settings from './components/Account/Settings';
 import Profile from './components/Account/Profile';
+import EmployeeDashboard from './components/Employee/EmployeeDashboard';
+import { homePathFor, KIOSK_ONLY_ROLE, KIOSK_PATH } from './config/roles';
 
 // Custom protected route that checks user role
 const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, isAuthenticated } = useAuth();
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
-  
+
   // For role restrictions
   if (user && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    // If user is not in allowed roles, redirect to their default page
-    if (user.role === 'employee') {
-      return <Navigate to="/face-attendance" />;
-    } else {
-      return <Navigate to="/dashboard" />;
-    }
+    return <Navigate to={homePathFor(user.role)} replace />;
   }
-  
+
   return children;
 };
 
@@ -61,29 +58,20 @@ const AppWrapper = ({ children }) => {
     return <>{children}</>;
   }
   
-  // For employee role, hide sidebar completely
-  if (user?.role === 'employee') {
-    // Redirect if trying to access non-allowed pages
-    const isAllowedPage = window.location.pathname === '/face-attendance' || window.location.pathname === '/face-registration';
-    
-    if (!isAllowedPage) {
-      // For non-allowed pages, redirect to face attendance
-      return <Navigate to="/face-attendance" replace />;
+  // Kiosk accounts get exactly one screen: no sidebar, and any other path
+  // bounces straight back to it.
+  if (user?.role === KIOSK_ONLY_ROLE) {
+    if (window.location.pathname !== KIOSK_PATH) {
+      return <Navigate to={KIOSK_PATH} replace />;
     }
-    
+
     return (
-      <div className="flex">
-        {/* No sidebar for employees */}
-        <div className="min-w-0 flex-1">
-          {/* No navbar for employees if you want to hide it completely */}
-          <main className="p-4">
-            {children}
-          </main>
-        </div>
+      <div className="min-h-screen">
+        <main className="p-4">{children}</main>
       </div>
     );
   }
-  
+
   return (
     <div className="flex">
       <Sidebar user={user} collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
@@ -104,14 +92,20 @@ const AppWrapper = ({ children }) => {
   );
 };
 
-// Public route that redirects to dashboard if authenticated
+// "/" is not a page of its own - it forwards to whatever this role's home is
+const RoleHome = () => {
+  const { user } = useAuth();
+  return <Navigate to={homePathFor(user?.role)} replace />;
+};
+
+// Public route that sends an already-signed-in user to their own home page
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  
+  const { isAuthenticated, user } = useAuth();
+
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to={homePathFor(user?.role)} replace />;
   }
-  
+
   return children;
 };
 
@@ -168,17 +162,31 @@ function App() {
           {/* Routes that require authentication */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
                 <AppWrapper>
                   <Dashboard />
                 </AppWrapper>
               </RoleProtectedRoute>
             </ProtectedRoute>
           } />
-          
+
+          {/* An employee's own attendance dashboard */}
+          <Route path="/my-dashboard" element={
+            <ProtectedRoute>
+              <RoleProtectedRoute allowedRoles={['employee', 'user']}>
+                <AppWrapper>
+                  <EmployeeDashboard />
+                </AppWrapper>
+              </RoleProtectedRoute>
+            </ProtectedRoute>
+          } />
+
+          {/* Punching is a kiosk/admin action only. Employees are deliberately
+              barred: they must not be able to mark their own attendance from
+              their personal login - they only ever read it on /my-dashboard. */}
           <Route path="/face-attendance" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'attendanceapp']}>
                 <AppWrapper>
                   <FaceAttendance />
                 </AppWrapper>
@@ -198,7 +206,7 @@ function App() {
           
           <Route path="/face-registration" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
                 <AppWrapper>
                   <FaceRegistration />
                 </AppWrapper>
@@ -246,14 +254,10 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Default route - redirect based on user role */}
+          {/* Default route - hand each role to its own home page */}
           <Route path="/" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee']}>
-                <AppWrapper>
-                  <Dashboard />
-                </AppWrapper>
-              </RoleProtectedRoute>
+              <RoleHome />
             </ProtectedRoute>
           } />
           
@@ -269,11 +273,20 @@ function App() {
           
           <Route path="/profile" element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
+              <RoleProtectedRoute allowedRoles={['admin', 'superadmin', 'employee', 'user']}>
                 <AppWrapper>
                   <Profile />
                 </AppWrapper>
               </RoleProtectedRoute>
+            </ProtectedRoute>
+          } />
+
+          {/* Unknown path: signed in -> role home, signed out -> login.
+              This is what keeps a kiosk account from ever landing anywhere
+              other than the attendance screen. */}
+          <Route path="*" element={
+            <ProtectedRoute>
+              <RoleHome />
             </ProtectedRoute>
           } />
         </Routes>

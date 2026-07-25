@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FiAlertCircle, FiArrowRight, FiBriefcase, FiCheckCircle, FiClock, FiDatabase,
-  FiMail, FiMapPin, FiMonitor, FiPhone, FiSave, FiServer, FiShield, FiSidebar,
+  FiAlertCircle, FiArrowRight, FiBriefcase, FiCheckCircle, FiClock,
+  FiMail, FiMapPin, FiPhone, FiSave, FiShield, FiSidebar,
   FiTrash2, FiUsers,
 } from 'react-icons/fi';
-import API_CONFIG from '../../config/api';
 import { useAuth } from '../../contexts/AuthContext';
 import LogoPicker from '../common/LogoPicker';
+import AttendanceAppAccounts from './AttendanceAppAccounts';
 
 const SIDEBAR_KEY = 'sidebarCollapsed';
 const REMEMBER_KEY = 'loginEmail';
@@ -79,19 +79,6 @@ const Toggle = ({ id, checked, onChange, label, hint, icon }) => {
           className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? 'left-[1.375rem]' : 'left-0.5'}`}
         />
       </button>
-    </div>
-  );
-};
-
-const InfoRow = ({ icon, label, value }) => {
-  const Icon = icon;
-  return (
-    <div className="flex items-center justify-between gap-4 py-2.5">
-      <span className="flex items-center gap-2 text-xs font-medium text-slate-500">
-        <Icon className="h-3.5 w-3.5 text-slate-400" />
-        {label}
-      </span>
-      <span className="truncate text-xs font-semibold text-slate-900">{value}</span>
     </div>
   );
 };
@@ -188,7 +175,7 @@ const Settings = () => {
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900">Settings</h1>
           <p className="mt-0.5 text-sm text-slate-500">
-            Company identity, device preferences and deployment details.
+            Company identity, device preferences and attendance app accounts.
           </p>
         </div>
       </div>
@@ -323,20 +310,6 @@ const Settings = () => {
 
         {/* ─── Side column ─── */}
         <div className="space-y-4">
-          <Card title="Deployment" description="Read-only details about this installation.">
-            <div className="divide-y divide-slate-100">
-              <InfoRow icon={FiServer} label="API endpoint" value={API_CONFIG.BASE_URL} />
-              <InfoRow icon={FiShield} label="Your role" value={user?.role || '—'} />
-              <InfoRow icon={FiBriefcase} label="Workspace" value={company?.name || '—'} />
-              <InfoRow
-                icon={FiDatabase}
-                label="Workspace status"
-                value={company?.status === 'inactive' ? 'Inactive' : 'Active'}
-              />
-              <InfoRow icon={FiMonitor} label="Face models" value="Loaded from /models" />
-            </div>
-          </Card>
-
           <Card title="Manage" description="Jump to the screens that own the rest of the configuration.">
             <div className="space-y-2">
               {[
@@ -366,6 +339,13 @@ const Settings = () => {
             </div>
           </Card>
         </div>
+      </div>
+
+      {/* Kiosk device logins - full width, outside the two-column grid. As a
+          second col-span-2 grid item it pushed the side column into row 2 and
+          left a hole beside the company form. */}
+      <div className="mt-4">
+        <AttendanceAppAccounts canManage={canEditCompany} />
       </div>
     </div>
   );

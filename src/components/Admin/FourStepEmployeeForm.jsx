@@ -146,10 +146,7 @@ const FourStepEmployeeForm = ({ onClose }) => {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          ...formData,
-          role: 'employee' // Changed from 'user' to 'employee' for consistency
-        })
+        body: JSON.stringify({ ...formData, role: 'employee' })
       });
 
       const data = response.data;
@@ -403,6 +400,7 @@ const FourStepEmployeeForm = ({ onClose }) => {
                   placeholder="Enter password (minimum 6 characters)"
                 />
               </div>
+
             </div>
           </div>
         );
@@ -489,13 +487,27 @@ const FourStepEmployeeForm = ({ onClose }) => {
             <FaArrowLeft className="mr-2" /> Previous
           </button>
           
-          {step < 4 ? (
+          {step < 3 ? (
             <button
               type="button"
               onClick={nextStep}
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
             >
               Next <FaArrowRight className="ml-2" />
+            </button>
+          ) : step === 3 ? (
+            /* Step 3 has to SUBMIT - it is what actually creates the employee.
+               It used to be a plain "Next" that just advanced to step 4, so no
+               user was ever created and face registration had no id to attach to. */
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-6 py-2 rounded-md flex items-center text-white ${
+                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {loading ? 'Creating…' : 'Create Employee'}
+              {!loading && <FaArrowRight className="ml-2" />}
             </button>
           ) : (
             <div className="flex space-x-3">

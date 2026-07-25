@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import API_CONFIG, { apiCall } from '../../config/api';
+import { homePathFor } from '../../config/roles';
 
 export default function EmployeeLogin() {
   const [email, setEmail] = useState('');
@@ -18,37 +18,16 @@ export default function EmployeeLogin() {
 
     try {
       const result = await login(email, password);
-      
+
       if (result.success) {
-        // Since login updates auth context, we can check the user role from localStorage
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          // Fetch user data to determine role
-          const { response, data } = await apiCall(API_CONFIG.ENDPOINTS.ME, {
-            method: 'GET',
-          });
-          
-          if (response.ok && data.success && data.data) {
-            const userRole = data.data.user.role;
-            if (userRole === 'employee' || userRole === '3') {
-              // Redirect employee directly to face attendance
-              navigate('/face-attendance');
-            } else {
-              // For other roles, redirect to dashboard
-              navigate('/dashboard');
-            }
-          } else {
-            // Default to dashboard if unable to fetch user data
-            navigate('/dashboard');
-          }
-        } else {
-          // Default to dashboard if no token
-          navigate('/dashboard');
-        }
+        // login() returns the user, so the role is known without a second
+        // round-trip: kiosk accounts go to the attendance screen, employees to
+        // their own dashboard, admins to theirs.
+        navigate(homePathFor(result.user?.role), { replace: true });
       } else {
         setError(result.message);
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during login');
     } finally {
       setLoading(false);

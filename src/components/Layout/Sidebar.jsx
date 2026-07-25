@@ -35,12 +35,20 @@ const Sidebar = ({ user, collapsed = false, onToggleCollapse }) => {
 
   // Define menu items based on user role
   const getMenuItems = () => {
-    if (user?.role === 'employee') {
+    // Employees read their own attendance and nothing else. No face attendance
+    // entry on purpose: punching happens at the kiosk, never from a personal
+    // login. (attendanceapp accounts never render a sidebar at all.)
+    if (user?.role === 'employee' || user?.role === 'user') {
       return [
         {
-          name: 'Face Attendance',
-          icon: <FaCalendarAlt />,
-          path: '/face-attendance'
+          name: 'My Dashboard',
+          icon: <FaTachometerAlt />,
+          path: '/my-dashboard'
+        },
+        {
+          name: 'My Profile',
+          icon: <FaUser />,
+          path: '/profile'
         }
       ];
     }
