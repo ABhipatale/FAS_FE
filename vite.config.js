@@ -34,24 +34,20 @@ export default defineConfig({
           }
         ]
       },
+      // generateSW builds the service worker from JSON config only: the old
+      // runtimeCaching block passed a cacheKeyWillBeUsed *function*, which fails
+      // workbox's schema validation and broke every production build. It also
+      // only matched https://api.* - never this app's API host - so nothing is
+      // lost by dropping it. API traffic now always hits the network, which is
+      // what attendance data needs.
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\./i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
-              },
-              cacheKeyWillBeUsed: async ({ request }) => {
-                return `${request.url}?v=${Date.now()}`
-              }
-            }
-          }
-        ]
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+      devOptions: {
+        enabled: false,
       }
     })
   ],

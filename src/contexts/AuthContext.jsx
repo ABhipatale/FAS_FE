@@ -119,6 +119,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       });
 
@@ -150,11 +151,13 @@ export const AuthProvider = ({ children }) => {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
         });
 
-        // Only a definitive rejection from the server logs the user out
-        if (response.status === 401 || response.status === 403) {
+        // Definitive rejections log the user out. 405 belongs here too: it means
+        // the auth middleware bounced us to the login route, so the token is dead.
+        if ([401, 403, 405].includes(response.status)) {
           clearSession();
           dispatch({ type: 'LOGOUT' });
           return;
@@ -167,7 +170,18 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        const data = await response.json();
+        // A body we can't parse means the session could not be verified - don't
+        // keep pretending the user is signed in with a token we can't confirm.
+        let data;
+        try {
+          data = JSON.parse(await response.text());
+        } catch {
+          console.error('Token verification returned a non-JSON body');
+          clearSession();
+          dispatch({ type: 'LOGOUT' });
+          return;
+        }
+
         if (!data.success || !data.data) {
           clearSession();
           dispatch({ type: 'LOGOUT' });
@@ -203,6 +217,7 @@ export const AuthProvider = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           email,
@@ -258,6 +273,7 @@ export const AuthProvider = ({ children }) => {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
         });
       } catch (error) {
@@ -280,6 +296,7 @@ export const AuthProvider = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           name,
@@ -322,6 +339,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Authorization': `Bearer ${state.token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify(companyData),
       });
@@ -357,6 +375,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Authorization': `Bearer ${state.token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       });
 
@@ -379,6 +398,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Merge a freshly saved user record into the session. Used by the profile
+  // page: /me only returns four fields, so replacing the user outright would
+  // drop company_id and the rest.
+  const applyUserUpdate = (updated) => {
+    const merged = { ...state.user, ...updated };
+    localStorage.setItem('authUser', JSON.stringify(merged));
+    dispatch({ type: 'SET_USER', payload: merged });
+    return merged;
+  };
+
   const value = {
     ...state,
     login,
@@ -386,6 +415,7 @@ export const AuthProvider = ({ children }) => {
     register,
     updateCompany,
     getCompanyDetails,
+    applyUserUpdate,
   };
 
   return (

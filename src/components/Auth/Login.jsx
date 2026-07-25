@@ -367,11 +367,8 @@ export default function Login() {
               <FiArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
             </Link>
 
-            <p className="text-center text-sm text-slate-500">
-              Don&apos;t have an account?{" "}
-              <Link to="/register" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
-                Register here
-              </Link>
+            <p className="text-center text-xs leading-relaxed text-slate-400">
+              Accounts are created by your administrator.
             </p>
           </div>
 

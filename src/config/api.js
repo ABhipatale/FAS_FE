@@ -54,23 +54,27 @@ export const apiCall = async (endpoint, options = {}) => {
   
   const defaultHeaders = {
     'Content-Type': 'application/json',
+    // Without this Laravel treats an expired token as a browser navigation and
+    // redirects to the `login` named route (GET /api/login -> 405 + an HTML
+    // error page), which used to surface as "Unexpected token '<'" everywhere.
+    'Accept': 'application/json',
   };
-  
+
   // Add auth token if available
   const token = localStorage.getItem('authToken');
   if (token) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
-  
+
   const config = {
     method: 'GET',
     headers: { ...defaultHeaders, ...options.headers },
     ...options,
   };
-  
+
   try {
     const response = await fetch(url, config);
-    
+
     // Handle authentication errors
     if (response.status === 401) {
       // Token expired or invalid - clear the whole cached session,
@@ -81,12 +85,36 @@ export const apiCall = async (endpoint, options = {}) => {
       window.location.href = '/login';
       throw new Error('Authentication required');
     }
-    
-    const data = await response.json();
+
+    const data = await readJson(response, url);
     return { response, data };
   } catch (error) {
     console.error('API call failed:', error);
     throw error;
+  }
+};
+
+// Parse a response body without throwing on HTML/empty payloads. A crash inside
+// response.json() looks like a network failure to every caller, which hides the
+// real problem (a 405, a 500 stack trace page, a dead endpoint).
+const readJson = async (response, url) => {
+  const raw = await response.text();
+
+  if (!raw) {
+    return response.ok
+      ? { success: true }
+      : { success: false, message: `The server returned an empty ${response.status} response.` };
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    console.error(`Non-JSON response from ${url} (HTTP ${response.status}):`, raw.slice(0, 300));
+    return {
+      success: false,
+      message: `Unexpected response from the server (HTTP ${response.status}). `
+        + `Check that the API is running at ${API_CONFIG.BASE_URL}.`,
+    };
   }
 };
 

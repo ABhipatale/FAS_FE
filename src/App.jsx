@@ -18,6 +18,8 @@ import ShiftManagement from './components/Admin/ShiftManagement';
 import EmployeeManagement from './components/Admin/EmployeeManagement';
 import CompanyRegister from './components/Auth/CompanyRegister';
 import SuperAdminDashboard from './components/Admin/SuperAdminDashboard';
+import Settings from './components/Account/Settings';
+import Profile from './components/Account/Profile';
 
 // Custom protected route that checks user role
 const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -259,7 +261,7 @@ function App() {
             <ProtectedRoute>
               <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
                 <AppWrapper>
-                  <div>Settings Page</div>
+                  <Settings />
                 </AppWrapper>
               </RoleProtectedRoute>
             </ProtectedRoute>
@@ -269,7 +271,7 @@ function App() {
             <ProtectedRoute>
               <RoleProtectedRoute allowedRoles={['admin', 'superadmin']}>
                 <AppWrapper>
-                  <div>Profile Page</div>
+                  <Profile />
                 </AppWrapper>
               </RoleProtectedRoute>
             </ProtectedRoute>
