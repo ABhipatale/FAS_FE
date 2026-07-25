@@ -1,6 +1,10 @@
 // Centralized API configuration
+//
+// BASE_URL comes from VITE_API_URL, which Vite inlines at BUILD time (not at
+// runtime), so it must be set in Render's Static Site environment before the
+// build runs. The localhost fallback keeps `npm run dev` working unchanged.
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:8009/api',
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8009/api',
   TIMEOUT: 10000,
   
   ENDPOINTS: {
