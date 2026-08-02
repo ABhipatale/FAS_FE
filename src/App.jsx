@@ -6,6 +6,8 @@ import AdminDashboard from "./components/Admin/AdminDashboard";
 import UserManagement from "./components/Admin/UserManagement";
 import Login from "./components/Auth/Login";
 import EmployeeLogin from "./components/Auth/EmployeeLogin";
+import ForgotPassword from "./components/Auth/ForgotPassword";
+import ResetPassword from "./components/Auth/ResetPassword";
 import Register from "./components/Auth/Register";
 import Logout from "./components/Auth/Logout";
 import Dashboard from "./components/Dashboard/EnhancedDashboard";
@@ -128,6 +130,18 @@ function App() {
           <Route path="/register" element={
             <PublicRoute>
               <Register />
+            </PublicRoute>
+          } />
+
+          {/* Password recovery - both public, the reset link carries a token */}
+          <Route path="/forgot-password" element={
+            <PublicRoute>
+              <ForgotPassword />
+            </PublicRoute>
+          } />
+          <Route path="/reset-password" element={
+            <PublicRoute>
+              <ResetPassword />
             </PublicRoute>
           } />
           

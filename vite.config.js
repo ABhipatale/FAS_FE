@@ -45,10 +45,30 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         navigateFallbackDenylist: [/^\/api\//],
+        // face-api.js alone is over a megabyte, so the app chunks sail past
+        // workbox's 2 MiB default and the build fails rather than silently
+        // shipping a service worker that precaches nothing.
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
       devOptions: {
         enabled: false,
       }
     })
   ],
+  build: {
+    // Split the heavy libraries out of the app bundle: they change far less
+    // often than our own code, so browsers keep them cached across deploys.
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-faceapi': ['face-api.js'],
+          'vendor-charts': ['recharts'],
+          'vendor-pdf': ['jspdf', 'jspdf-autotable'],
+          'vendor-motion': ['framer-motion'],
+        },
+      },
+    },
+  },
 })
