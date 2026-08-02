@@ -7,9 +7,11 @@
     <meta name="theme-color" content="#3b82f6" />
     <link rel="manifest" href="/manifest.json" />
     <title>Face Attendance System</title>
-    <script>
-      window.BASE_URL = 'http://localhost:8009';
-    </script>
+    <!-- The API host is NOT defined here. It lives in src/config/api.js
+         (VITE_API_URL), so there is a single source of truth. The old
+         window.BASE_URL global had to be edited in lockstep with api.js, and
+         when it pointed at the live host with a trailing slash it produced
+         requests to ".com//api/shifts" over http, which the browser blocks. -->
   </head>
   <body>
     <div id="root"></div>
