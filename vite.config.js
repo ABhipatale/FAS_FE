@@ -8,12 +8,18 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg'],
+      includeAssets: [
+        'favicon.ico', 'favicon.png',
+        'icons/grow-192.png', 'icons/grow-512.png', 'icons/grow-maskable-512.png',
+      ],
+      // This is the manifest the installed app actually uses - public/manifest.json
+      // is the static copy served to browsers that read the <link> in index.html,
+      // so the two are kept in step by hand.
       manifest: {
-        name: 'Face Attendance System',
+        name: 'Face Attendance System | Growmore IT Services',
         short_name: 'FaceAttend',
-        description: 'A modern face recognition-based attendance tracking system',
-        theme_color: '#3b82f6',
+        description: 'Face recognition attendance, shift tracking and reporting by Growmore IT Services',
+        theme_color: '#0f5f6b',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
@@ -21,16 +27,22 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'vite.svg',
+            src: 'icons/grow-192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: 'vite.svg',
+            src: 'icons/grow-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/grow-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
