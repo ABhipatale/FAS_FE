@@ -1,15 +1,7 @@
 import { useState } from 'react';
 import { FiAlertCircle, FiImage, FiTrash2, FiUpload } from 'react-icons/fi';
 import { fileToLogoDataUrl, LOGO_ACCEPT_ATTR, LOGO_MAX_PIXELS } from '../../utils/companyLogo';
-
-const initials = (name = '') =>
-  name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase() || '?';
+import { BRAND, DEFAULT_LOGO } from '../../config/brand';
 
 /**
  * Picks a company logo and hands back a resized base64 data URI. The logo is
@@ -50,12 +42,14 @@ const LogoPicker = ({ id, value, name, error, disabled, label = 'Company logo', 
           shown ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-slate-50'
         }`}
       >
+        {/* No upload yet? The app mark is what this company will actually show,
+            so preview that rather than a placeholder. */}
         <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {value ? (
-            <img src={value} alt="" className="h-full w-full object-contain p-1" />
-          ) : (
-            <span className="text-xs font-semibold text-slate-400">{initials(name)}</span>
-          )}
+          <img
+            src={value || DEFAULT_LOGO}
+            alt={value ? `${name || 'Company'} logo` : `${BRAND.name} logo`}
+            className={`h-full w-full object-contain p-1 ${value ? '' : 'opacity-70'}`}
+          />
         </span>
 
         <div className="min-w-0 flex-1">
@@ -87,7 +81,10 @@ const LogoPicker = ({ id, value, name, error, disabled, label = 'Company logo', 
 
           <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${shown ? 'font-medium text-red-600' : 'text-slate-400'}`}>
             {shown ? <FiAlertCircle className="h-3.5 w-3.5 shrink-0" /> : <FiImage className="h-3.5 w-3.5 shrink-0" />}
-            {shown || `PNG, JPG, WEBP or SVG — resized to ${LOGO_MAX_PIXELS}px automatically.`}
+            {shown ||
+              (value
+                ? `PNG, JPG, WEBP or SVG — resized to ${LOGO_MAX_PIXELS}px automatically.`
+                : `No logo yet — the ${BRAND.name} mark is used until one is uploaded.`)}
           </p>
         </div>
 

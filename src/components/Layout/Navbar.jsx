@@ -114,6 +114,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { BRAND, DEFAULT_LOGO } from "../../config/brand";
 
 export default function Navbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -142,12 +143,12 @@ export default function Navbar() {
       >
         <div className="px-6 py-5 border-b border-slate-800 flex justify-between items-center">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
-              FAS
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white">
+              <img src={DEFAULT_LOGO} alt={`${BRAND.name} logo`} className="h-full w-full object-contain p-1" />
             </div>
             <div>
-              <div className="font-semibold leading-tight">Face Attendance</div>
-              <div className="text-xs text-slate-400">Management System</div>
+              <div className="font-semibold leading-tight">{BRAND.product}</div>
+              <div className="text-xs text-slate-400">{BRAND.name}</div>
             </div>
           </Link>
 
@@ -202,15 +203,15 @@ export default function Navbar() {
             </button> */}
 
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-blue-700 text-white flex items-center justify-center font-bold text-lg">
-                FAS
+              <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <img src={DEFAULT_LOGO} alt={`${BRAND.name} logo`} className="h-full w-full object-contain p-1" />
               </div>
               <div className="hidden sm:block">
                 <div className="text-lg font-semibold text-slate-900">
-                  Face Attendance System
+                  {BRAND.product} System
                 </div>
                 <div className="text-xs text-slate-500">
-                  Secure & Automated Attendance
+                  {BRAND.name}
                 </div>
               </div>
             </Link>

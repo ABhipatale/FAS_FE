@@ -6,6 +6,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { isPdfSafeLogo } from './companyLogo';
+import { BRAND, DEFAULT_LOGO_DATA_URL } from '../config/brand';
 
 export const FILTER_LABELS = {
   today: 'Today',
@@ -190,21 +191,21 @@ export const exportAttendancePdf = ({ rows, filter, range, companyName, companyL
   const pageWidth = doc.internal.pageSize.getWidth();
   const totals = summarise(rows);
 
-  // Company logo in the header, scaled into a 46pt box. Anything jsPDF can't
-  // rasterise (SVG) is skipped rather than blowing up the whole export.
+  // Company logo in the header, scaled into a 46pt box. The app mark stands in
+  // when the company has none - or has an SVG one, which jsPDF cannot
+  // rasterise. A failed draw is skipped rather than blowing up the export.
+  const headerLogo = isPdfSafeLogo(companyLogo) ? companyLogo : DEFAULT_LOGO_DATA_URL;
   let textLeft = 40;
-  if (isPdfSafeLogo(companyLogo)) {
-    try {
-      const props = doc.getImageProperties(companyLogo);
-      const box = 46;
-      const scale = Math.min(box / props.width, box / props.height);
-      const width = props.width * scale;
-      const height = props.height * scale;
-      doc.addImage(companyLogo, 40, 30, width, height);
-      textLeft = 40 + width + 14;
-    } catch (err) {
-      console.warn('Skipping company logo in PDF:', err);
-    }
+  try {
+    const props = doc.getImageProperties(headerLogo);
+    const box = 46;
+    const scale = Math.min(box / props.width, box / props.height);
+    const width = props.width * scale;
+    const height = props.height * scale;
+    doc.addImage(headerLogo, 40, 30, width, height);
+    textLeft = 40 + width + 14;
+  } catch (err) {
+    console.warn('Skipping logo in PDF:', err);
   }
 
   doc.setFont('helvetica', 'bold');
@@ -240,6 +241,7 @@ export const exportAttendancePdf = ({ rows, filter, range, companyName, companyL
       const { pageSize } = doc.internal;
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
+      doc.text(`${BRAND.product} · ${BRAND.name}`, 40, pageSize.getHeight() - 18);
       doc.text(
         `Page ${doc.internal.getNumberOfPages()}`,
         pageWidth - 40,

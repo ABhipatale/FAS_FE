@@ -3,11 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle, FiCheckCircle,
-  FiArrowRight, FiShield, FiClock, FiLayers, FiCrosshair, FiCamera,
+  FiArrowRight, FiShield, FiClock, FiLayers, FiCamera, FiGlobe, FiPhone,
+  FiMapPin,
 } from "react-icons/fi";
 import { useAuth } from "../../contexts/AuthContext";
 import InstallAppButton from "../InstallAppButton";
 import { homePathFor } from "../../config/roles";
+import { BRAND, DEFAULT_LOGO } from "../../config/brand";
 
 const REMEMBER_KEY = "loginEmail";
 
@@ -28,6 +30,15 @@ const HIGHLIGHTS = [
     body: "Every workspace keeps its own people, shifts and records fully separated.",
   },
 ];
+
+// Contact rows are driven by config/brand.js: a detail that has not been filled
+// in there simply does not render, so the block never shows an empty field.
+const CONTACT_LINES = [
+  { icon: FiGlobe, value: BRAND.websiteLabel, href: BRAND.website, external: true },
+  { icon: FiMail, value: BRAND.email, href: `mailto:${BRAND.email}` },
+  { icon: FiPhone, value: BRAND.phone, href: `tel:${BRAND.phone.replace(/\s+/g, "")}` },
+  { icon: FiMapPin, value: BRAND.address },
+].filter((line) => line.value);
 
 // Last email used on this device, so "Remember me" is a real convenience
 // rather than a decorative checkbox.
@@ -108,17 +119,22 @@ export default function Login() {
 
         <div className="relative flex w-full flex-col justify-between p-12 xl:p-16">
           {/* Wordmark */}
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur">
-              <FiCrosshair className="h-5 w-5 text-indigo-300" />
+          <a
+            href={BRAND.website}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="flex w-fit items-center gap-3 rounded-xl transition hover:opacity-90"
+          >
+            <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-white/15">
+              <img src={DEFAULT_LOGO} alt={`${BRAND.name} logo`} className="h-full w-full object-contain p-1" />
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-bold tracking-tight text-white">Face Attendance</p>
+              <p className="text-sm font-bold tracking-tight text-white">{BRAND.name}</p>
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-300/70">
-                Workforce Platform
+                {BRAND.product} · {BRAND.productTagline}
               </p>
             </div>
-          </div>
+          </a>
 
           {/* Headline + highlights */}
           <div className="max-w-lg py-14">
@@ -159,18 +175,46 @@ export default function Login() {
           </div>
 
           {/* Footer strip */}
-          <div className="flex items-center gap-6 border-t border-white/10 pt-6">
-            <p className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
-              <FiLock className="h-3.5 w-3.5 text-emerald-400" />
-              Encrypted session
-            </p>
-            <p className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
-              <FiShield className="h-3.5 w-3.5 text-emerald-400" />
-              Role-based access
-            </p>
-            <p className="ml-auto text-[11px] text-slate-500">
-              © {new Date().getFullYear()} TESTQ Technologies
-            </p>
+          <div className="space-y-4 border-t border-white/10 pt-6">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <p className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
+                <FiLock className="h-3.5 w-3.5 text-emerald-400" />
+                Encrypted session
+              </p>
+              <p className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
+                <FiShield className="h-3.5 w-3.5 text-emerald-400" />
+                Role-based access
+              </p>
+              <p className="ml-auto text-[11px] text-slate-500">
+                © {new Date().getFullYear()} {BRAND.name}
+              </p>
+            </div>
+
+            {/* Vendor contact - whatever is configured in config/brand.js */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              {CONTACT_LINES.map((line) => {
+                const content = (
+                  <>
+                    <line.icon className="h-3.5 w-3.5 shrink-0 text-indigo-300/80" />
+                    {line.value}
+                  </>
+                );
+                return line.href ? (
+                  <a
+                    key={line.value}
+                    href={line.href}
+                    {...(line.external ? { target: "_blank", rel: "noreferrer noopener" } : {})}
+                    className="flex items-center gap-2 text-[11px] font-medium text-slate-400 transition hover:text-white"
+                  >
+                    {content}
+                  </a>
+                ) : (
+                  <span key={line.value} className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
+                    {content}
+                  </span>
+                );
+              })}
+            </div>
           </div>
         </div>
       </aside>
@@ -185,13 +229,13 @@ export default function Login() {
         >
           {/* Compact mark for viewports without the brand panel */}
           <div className="mb-9 flex items-center gap-3 lg:hidden">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900">
-              <FiCrosshair className="h-5 w-5 text-indigo-300" />
+            <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <img src={DEFAULT_LOGO} alt={`${BRAND.name} logo`} className="h-full w-full object-contain p-1" />
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-bold tracking-tight text-slate-900">Face Attendance</p>
+              <p className="text-sm font-bold tracking-tight text-slate-900">{BRAND.name}</p>
               <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">
-                Workforce Platform
+                {BRAND.product} · {BRAND.productTagline}
               </p>
             </div>
           </div>
@@ -382,9 +426,49 @@ export default function Login() {
             </p>
           </div>
 
-          <p className="mt-9 flex items-center justify-center gap-1.5 text-[11px] text-slate-400 lg:hidden">
+          {/* Who builds this - shown on every viewport, since the brand panel
+              is hidden below lg. */}
+          <div className="mt-9 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3.5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                <img src={DEFAULT_LOGO} alt="" className="h-full w-full object-contain p-0.5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-700">
+                  A product of {BRAND.name}
+                </p>
+                <a
+                  href={BRAND.website}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-[11px] font-medium text-indigo-600 transition hover:text-indigo-700"
+                >
+                  {BRAND.websiteLabel}
+                </a>
+              </div>
+            </div>
+
+            {(BRAND.email || BRAND.phone) && (
+              <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-200 pt-2.5 text-[11px] text-slate-500">
+                {BRAND.email && (
+                  <a href={`mailto:${BRAND.email}`} className="flex items-center gap-1.5 hover:text-slate-700">
+                    <FiMail className="h-3 w-3" />
+                    {BRAND.email}
+                  </a>
+                )}
+                {BRAND.phone && (
+                  <a href={`tel:${BRAND.phone.replace(/\s+/g, "")}`} className="flex items-center gap-1.5 hover:text-slate-700">
+                    <FiPhone className="h-3 w-3" />
+                    {BRAND.phone}
+                  </a>
+                )}
+              </p>
+            )}
+          </div>
+
+          <p className="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
             <FiLock className="h-3 w-3" />
-            Encrypted session · © {new Date().getFullYear()} TESTQ Technologies
+            Encrypted session · © {new Date().getFullYear()} {BRAND.name}
           </p>
         </motion.div>
       </main>

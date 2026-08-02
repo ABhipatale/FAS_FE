@@ -10,6 +10,7 @@ import {
 import API_CONFIG from '../../config/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { fileToLogoDataUrl, LOGO_ACCEPT_ATTR, LOGO_MAX_PIXELS } from '../../utils/companyLogo';
+import { BRAND, DEFAULT_LOGO, logoOrDefault } from '../../config/brand';
 
 const STEPS = [
   { id: 1, label: 'Company', hint: 'Organisation details' },
@@ -53,15 +54,6 @@ const formatDate = (value) => {
   if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 };
-
-const initials = (name = '') =>
-  name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase() || '?';
 
 /* ---------------------------------------------------------------- Field */
 
@@ -148,12 +140,14 @@ const LogoPicker = ({ id, value, name, error, disabled, onChange }) => {
           shown ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-slate-50'
         }`}
       >
+        {/* No upload yet? The app mark is what this company will actually show,
+            so preview that rather than a placeholder. */}
         <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {value ? (
-            <img src={value} alt="" className="h-full w-full object-contain p-1" />
-          ) : (
-            <span className="text-xs font-semibold text-slate-400">{initials(name)}</span>
-          )}
+          <img
+            src={value || DEFAULT_LOGO}
+            alt={value ? `${name || 'Company'} logo` : `${BRAND.name} logo`}
+            className={`h-full w-full object-contain p-1 ${value ? '' : 'opacity-70'}`}
+          />
         </span>
 
         <div className="min-w-0 flex-1">
@@ -185,7 +179,10 @@ const LogoPicker = ({ id, value, name, error, disabled, onChange }) => {
 
           <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${shown ? 'font-medium text-red-600' : 'text-slate-400'}`}>
             {shown ? <FiAlertCircle className="h-3.5 w-3.5 shrink-0" /> : <FiImage className="h-3.5 w-3.5 shrink-0" />}
-            {shown || `PNG, JPG, WEBP or SVG — resized to ${LOGO_MAX_PIXELS}px automatically.`}
+            {shown ||
+              (value
+                ? `PNG, JPG, WEBP or SVG — resized to ${LOGO_MAX_PIXELS}px automatically.`
+                : `No logo yet — the ${BRAND.name} mark is used until one is uploaded.`)}
           </p>
         </div>
 
@@ -1286,19 +1283,13 @@ const CompanyManagement = () => {
                   <tr key={company.id} className="group border-t border-slate-100 transition hover:bg-slate-50">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        {company.logo ? (
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
-                            <img
-                              src={company.logo}
-                              alt={`${company.name} logo`}
-                              className="h-full w-full object-contain p-0.5"
-                            />
-                          </span>
-                        ) : (
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-semibold text-indigo-700">
-                            {initials(company.name)}
-                          </span>
-                        )}
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                          <img
+                            src={logoOrDefault(company.logo)}
+                            alt={`${company.name} logo`}
+                            className="h-full w-full object-contain p-0.5"
+                          />
+                        </span>
                         <div className="min-w-0">
                           <p className="flex items-center gap-2 truncate font-medium text-slate-900">
                             {company.name}

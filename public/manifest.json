@@ -1,25 +1,31 @@
 {
-  "name": "Face Attendance System",
+  "name": "Face Attendance System | Growmore IT Services",
   "short_name": "FaceAttend",
-  "description": "A modern face recognition-based attendance tracking system",
+  "description": "Face recognition attendance, shift tracking and reporting by Growmore IT Services",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
+  "theme_color": "#0f5f6b",
   "orientation": "portrait",
   "scope": "/",
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "/icons/grow-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/vite.svg",
+      "src": "/icons/grow-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/grow-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["business", "productivity"],

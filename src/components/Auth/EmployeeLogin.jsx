@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { homePathFor } from '../../config/roles';
+import { BRAND, DEFAULT_LOGO } from '../../config/brand';
 
 export default function EmployeeLogin() {
   const [email, setEmail] = useState('');
@@ -38,13 +39,11 @@ export default function EmployeeLogin() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="mx-auto bg-indigo-600 text-white w-16 h-16 rounded-full flex items-center justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white">
+            <img src={DEFAULT_LOGO} alt={`${BRAND.name} logo`} className="h-full w-full object-contain p-1.5" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800">Employee Login</h1>
-          <p className="text-gray-600 mt-2">Face Attendance System</p>
+          <p className="text-gray-600 mt-2">{BRAND.product} · {BRAND.name}</p>
         </div>
 
         {error && (
@@ -110,6 +109,18 @@ export default function EmployeeLogin() {
             Admin Login
           </Link>
         </div>
+
+        <p className="mt-6 border-t border-gray-100 pt-4 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()}{' '}
+          <a
+            href={BRAND.website}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="font-medium text-gray-500 transition hover:text-gray-700"
+          >
+            {BRAND.name}
+          </a>
+        </p>
       </div>
     </div>
   );

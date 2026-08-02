@@ -5,6 +5,7 @@ import {
   FaUser, FaSignOutAlt, FaBuilding, FaAngleDoubleLeft, FaAngleDoubleRight, FaGlobe,
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import { BRAND, logoOrDefault } from '../../config/brand';
 
 /**
  * `collapsed` is a desktop-only concept: at lg+ the sidebar shrinks to an
@@ -18,18 +19,10 @@ const Sidebar = ({ user, collapsed = false, onToggleCollapse }) => {
 
   const closeMobile = () => setMobileOpen(false);
 
-  // The signed-in company brands the sidebar; the product name is the fallback
-  // for accounts with no company or no logo uploaded yet.
-  const brandName = company?.name || 'Face Attendance System';
-  const brandLogo = company?.logo || '';
-  const brandInitials =
-    (company?.name || 'Face Attendance')
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((word) => word[0])
-      .join('')
-      .toUpperCase() || 'FA';
+  // The signed-in company brands the sidebar; the app mark is the fallback for
+  // accounts with no company or no logo uploaded yet.
+  const brandName = company?.name || BRAND.name;
+  const brandLogo = logoOrDefault(company?.logo);
 
   const isActive = (path) => location.pathname === path;
 
@@ -150,15 +143,9 @@ const Sidebar = ({ user, collapsed = false, onToggleCollapse }) => {
         <div className={`shrink-0 border-b border-gray-700 p-4 ${collapsed ? 'lg:px-2' : ''}`}>
           <div className={collapsed ? 'lg:hidden' : ''}>
             <div className="flex items-center gap-3">
-              {brandLogo ? (
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
-                  <img src={brandLogo} alt="" className="h-full w-full object-contain p-1" />
-                </span>
-              ) : (
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
-                  {brandInitials}
-                </span>
-              )}
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+                <img src={brandLogo} alt="" className="h-full w-full object-contain p-1" />
+              </span>
               <h1 className="min-w-0 truncate text-lg font-bold leading-tight" title={brandName}>
                 {brandName}
               </h1>
@@ -169,15 +156,9 @@ const Sidebar = ({ user, collapsed = false, onToggleCollapse }) => {
           {/* Compact mark shown in place of the title when collapsed */}
           {collapsed && (
             <div className="hidden justify-center lg:flex" title={brandName}>
-              {brandLogo ? (
-                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white">
-                  <img src={brandLogo} alt="" className="h-full w-full object-contain p-0.5" />
-                </span>
-              ) : (
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
-                  {brandInitials}
-                </span>
-              )}
+              <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white">
+                <img src={brandLogo} alt="" className="h-full w-full object-contain p-0.5" />
+              </span>
             </div>
           )}
         </div>

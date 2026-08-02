@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fi';
 import API_CONFIG, { apiCall } from '../../config/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { logoOrDefault } from '../../config/brand';
 
 const RANGES = [7, 14, 30];
 
@@ -27,9 +28,6 @@ const SORTS = [
   { id: 'face_coverage', label: 'Face coverage' },
   { id: 'created_at', label: 'Newest' },
 ];
-
-const initials = (name = '') =>
-  name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
 
 const formatDateTime = (value) => {
   if (!value) return 'No activity yet';
@@ -89,16 +87,12 @@ const StatusPill = ({ status }) => {
   );
 };
 
-const CompanyMark = ({ company, size = 'h-10 w-10' }) =>
-  company.logo ? (
-    <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white`}>
-      <img src={company.logo} alt="" className="h-full w-full object-contain p-1" />
-    </span>
-  ) : (
-    <span className={`flex ${size} shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-bold text-indigo-700`}>
-      {initials(company.name)}
-    </span>
-  );
+// Companies that have not uploaded a logo fall back to the app mark.
+const CompanyMark = ({ company, size = 'h-10 w-10' }) => (
+  <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white`}>
+    <img src={logoOrDefault(company.logo)} alt="" className="h-full w-full object-contain p-1" />
+  </span>
+);
 
 const ChartCard = ({ title, hint, children, className = '' }) => (
   <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
