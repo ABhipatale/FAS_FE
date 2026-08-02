@@ -3,8 +3,14 @@
 // BASE_URL comes from VITE_API_URL, which Vite inlines at BUILD time (not at
 // runtime), so it must be set in Render's Static Site environment before the
 // build runs. The localhost fallback keeps `npm run dev` working unchanged.
+// Every ENDPOINT below starts with "/", so a base that ends with one produces
+// a double slash (".com//api/shifts"). Strip trailing slashes once, here.
+const normaliseBase = (value) => String(value || '').replace(/\/+$/, '');
+
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'https://fasback.growmoreitservices.com/api',
+  BASE_URL: normaliseBase(
+    import.meta.env.VITE_API_URL || 'https://fasback.growmoreitservices.com/api'
+  ),
   TIMEOUT: 10000,
   
   ENDPOINTS: {

@@ -13,9 +13,10 @@
     />
     <link rel="manifest" href="/manifest.json" />
     <title>Face Attendance System | Growmore IT Services</title>
-    <script>
-      window.BASE_URL = 'http://fasback.growmoreitservices.com/';
-    </script>
+    <!-- No window.BASE_URL here on purpose: the API host lives in
+         src/config/api.js (VITE_API_URL), so there is one source of truth.
+         The old global was http:// with a trailing slash, which produced
+         mixed-content requests to //api/... from the HTTPS site. -->
   </head>
   <body>
     <div id="root"></div>

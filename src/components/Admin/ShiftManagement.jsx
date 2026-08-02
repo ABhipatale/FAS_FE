@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG, { apiCall } from '../../config/api';
 
 const ShiftManagement = () => {
   const { company } = useAuth();
@@ -29,18 +30,14 @@ const ShiftManagement = () => {
     }
     
     try {
-      const response = await fetch(`${window.BASE_URL}/api/shifts?company_id=${company.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Shifts are scoped to the caller's company by the API - the old
+      // ?company_id= query string was never read server-side.
+      const { response, data } = await apiCall(API_CONFIG.ENDPOINTS.SHIFTS);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch shifts');
+      if (!response.ok && !data.success) {
+        throw new Error(data.message || 'Failed to fetch shifts');
       }
 
-      const data = await response.json();
       if (data.success) {
         setShifts(data.data);
       } else {
@@ -87,28 +84,14 @@ const ShiftManagement = () => {
     if (!validateForm()) return;
 
     try {
-      const url = editingShift 
-        ? `${window.BASE_URL}/api/shifts/${editingShift.id}`
-        : `${window.BASE_URL}/api/shifts`;
-      
-      const method = editingShift ? 'PUT' : 'POST';
-      
-      // Include company_id in the request
-      const requestData = {
-        ...formData,
-        company_id: company?.id
-      };
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
-      });
+      const endpoint = editingShift
+        ? API_CONFIG.ENDPOINTS.SHIFT_DETAIL(editingShift.id)
+        : API_CONFIG.ENDPOINTS.SHIFTS;
 
-      const data = await response.json();
+      const { data } = await apiCall(endpoint, {
+        method: editingShift ? 'PUT' : 'POST',
+        body: JSON.stringify({ ...formData, company_id: company?.id }),
+      });
 
       if (data.success) {
         fetchShifts(); // Refresh the list
@@ -142,15 +125,9 @@ const ShiftManagement = () => {
     }
 
     try {
-      const response = await fetch(`${window.BASE_URL}/api/shifts/${shiftId}`, {
+      const { data } = await apiCall(API_CONFIG.ENDPOINTS.SHIFT_DETAIL(shiftId), {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        }
       });
-
-      const data = await response.json();
 
       if (data.success) {
         fetchShifts();
