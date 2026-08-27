@@ -1012,6 +1012,109 @@ const SkeletonRow = () => (
   </tr>
 );
 
+/* The logo mark, the action buttons and the empty state each render in two
+   places now - the md+ table and the phone card list - so they live in one
+   component instead of being copy-pasted into both. */
+
+const CompanyLogo = ({ company }) =>
+  company.logo ? (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <img
+        src={company.logo}
+        alt={`${company.name} logo`}
+        className="h-full w-full object-contain p-0.5"
+      />
+    </span>
+  ) : (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-semibold text-indigo-700">
+      {initials(company.name)}
+    </span>
+  );
+
+// `stacked` is the card variant: the pair splits the full card width so both
+// stay comfortably tappable. In the table they keep their natural size.
+const CompanyActions = ({ company, isOwnCompany, busy, onEdit, onToggle, stacked = false }) => {
+  const lockedOff = isOwnCompany && company.status === 'active';
+  const grow = stacked ? 'flex-1 justify-center py-2' : '';
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onEdit}
+        disabled={busy}
+        title={`Edit ${company.name}`}
+        className={`flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 ${grow}`}
+      >
+        <FiEdit2 className="h-3.5 w-3.5" />
+        Edit
+      </button>
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={busy || lockedOff}
+        title={lockedOff
+          ? 'You cannot deactivate the company your own account belongs to'
+          : company.status === 'active'
+            ? `Deactivate ${company.name}`
+            : `Activate ${company.name}`}
+        className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+          company.status === 'active'
+            ? 'border-amber-200 bg-white text-amber-700 hover:bg-amber-50'
+            : 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+        } ${grow}`}
+      >
+        {busy ? (
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        ) : (
+          <FiPower className="h-3.5 w-3.5" />
+        )}
+        {company.status === 'active' ? 'Deactivate' : 'Activate'}
+      </button>
+    </>
+  );
+};
+
+const SkeletonCard = () => (
+  <div className="space-y-3 p-4">
+    <div className="flex items-center gap-3">
+      <div className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-slate-100" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-3.5 w-2/3 animate-pulse rounded bg-slate-100" />
+        <div className="h-3 w-1/3 animate-pulse rounded bg-slate-100" />
+      </div>
+    </div>
+    <div className="h-8 animate-pulse rounded-lg bg-slate-100" />
+  </div>
+);
+
+const EmptyState = ({ query, onAdd }) => (
+  <div className="flex flex-col items-center text-center">
+    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+      <FiInbox className="h-5 w-5 text-slate-400" />
+    </span>
+    <p className="mt-4 text-sm font-medium text-slate-900">
+      {query ? 'No companies match your search' : 'No companies registered yet'}
+    </p>
+    <p className="mt-1 text-sm text-slate-500">
+      {query
+        ? 'Try a different name, email or phone number.'
+        : 'Register the first organisation to get started.'}
+    </p>
+    {!query && (
+      <button
+        type="button"
+        onClick={onAdd}
+        className="mt-5 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        <FiPlus className="h-4 w-4" />
+        Add company
+      </button>
+    )}
+  </div>
+);
+
+
 /* ------------------------------------------------------- Main screen */
 
 const CompanyManagement = () => {
@@ -1261,7 +1364,69 @@ const CompanyManagement = () => {
       {/* Table */}
       {!error && (
         <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
+          {/* Phone: one card per company. Six columns cannot fit a phone without
+              horizontal scrolling, and that scrolling pushed the company name under
+              the pinned Actions column - so below md the same data stacks instead. */}
+          <div className="divide-y divide-slate-100 md:hidden">
+            {loading && [...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+
+            {!loading && filtered.map((company) => {
+              const isOwnCompany = ownCompany?.id === company.id;
+
+              return (
+                <div key={company.id} className="p-4">
+                  <div className="flex items-start gap-3">
+                    <CompanyLogo company={company} />
+                    <div className="min-w-0 flex-1">
+                      {/* break-words, not truncate: on a card the full name has
+                          room to wrap, and cutting it off was the original bug. */}
+                      <p className="break-words text-sm font-semibold text-slate-900">
+                        {company.name}
+                      </p>
+                      {isOwnCompany && (
+                        <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+                          Your company
+                        </span>
+                      )}
+                      <p className="mt-1 break-all text-xs text-slate-500">{company.email || '—'}</p>
+                      <p className="mt-0.5 text-xs text-slate-400">{company.phone || 'No phone'}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-400">
+                    <StatusBadge status={company.status} />
+                    {company.users_count !== undefined && (
+                      <span className="flex items-center gap-1">
+                        <FiUsers className="h-3 w-3" />
+                        {company.users_count} {company.users_count === 1 ? 'user' : 'users'}
+                      </span>
+                    )}
+                    <span>{formatDate(company.created_at)}</span>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <CompanyActions
+                      company={company}
+                      isOwnCompany={isOwnCompany}
+                      busy={busyId === company.id}
+                      onEdit={() => setEditing(company)}
+                      onToggle={() => handleToggleStatus(company)}
+                      stacked
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
+            {!loading && filtered.length === 0 && (
+              <div className="px-5 py-14">
+                <EmptyState query={query} onAdd={() => setModalOpen(true)} />
+              </div>
+            )}
+          </div>
+
+          {/* md and up: the full table, where all six columns actually fit */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[44rem] text-left text-sm">
               <thead>
                 <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -1286,19 +1451,7 @@ const CompanyManagement = () => {
                   <tr key={company.id} className="group border-t border-slate-100 transition hover:bg-slate-50">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        {company.logo ? (
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
-                            <img
-                              src={company.logo}
-                              alt={`${company.name} logo`}
-                              className="h-full w-full object-contain p-0.5"
-                            />
-                          </span>
-                        ) : (
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-semibold text-indigo-700">
-                            {initials(company.name)}
-                          </span>
-                        )}
+                        <CompanyLogo company={company} />
                         <div className="min-w-0">
                           <p className="flex items-center gap-2 truncate font-medium text-slate-900">
                             {company.name}
@@ -1332,38 +1485,13 @@ const CompanyManagement = () => {
                     </td>
                     <td className="sticky right-0 whitespace-nowrap bg-white px-5 py-4 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.12)] transition-colors group-hover:bg-slate-50">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setEditing(company)}
-                          disabled={busyId === company.id}
-                          title={`Edit ${company.name}`}
-                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
-                        >
-                          <FiEdit2 className="h-3.5 w-3.5" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(company)}
-                          disabled={busyId === company.id || (isOwnCompany && company.status === 'active')}
-                          title={isOwnCompany && company.status === 'active'
-                            ? 'You cannot deactivate the company your own account belongs to'
-                            : company.status === 'active'
-                              ? `Deactivate ${company.name}`
-                              : `Activate ${company.name}`}
-                          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                            company.status === 'active'
-                              ? 'border-amber-200 bg-white text-amber-700 hover:bg-amber-50'
-                              : 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
-                          }`}
-                        >
-                          {busyId === company.id ? (
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          ) : (
-                            <FiPower className="h-3.5 w-3.5" />
-                          )}
-                          {company.status === 'active' ? 'Deactivate' : 'Activate'}
-                        </button>
+                        <CompanyActions
+                          company={company}
+                          isOwnCompany={isOwnCompany}
+                          busy={busyId === company.id}
+                          onEdit={() => setEditing(company)}
+                          onToggle={() => handleToggleStatus(company)}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -1373,29 +1501,7 @@ const CompanyManagement = () => {
                 {!loading && filtered.length === 0 && (
                   <tr className="border-t border-slate-100">
                     <td colSpan={6} className="px-5 py-16">
-                      <div className="flex flex-col items-center text-center">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-                          <FiInbox className="h-5 w-5 text-slate-400" />
-                        </span>
-                        <p className="mt-4 text-sm font-medium text-slate-900">
-                          {query ? 'No companies match your search' : 'No companies registered yet'}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {query
-                            ? 'Try a different name, email or phone number.'
-                            : 'Register the first organisation to get started.'}
-                        </p>
-                        {!query && (
-                          <button
-                            type="button"
-                            onClick={() => setModalOpen(true)}
-                            className="mt-5 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
-                          >
-                            <FiPlus className="h-4 w-4" />
-                            Add company
-                          </button>
-                        )}
-                      </div>
+                      <EmptyState query={query} onAdd={() => setModalOpen(true)} />
                     </td>
                   </tr>
                 )}

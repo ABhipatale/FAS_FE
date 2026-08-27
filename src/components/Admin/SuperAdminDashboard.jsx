@@ -110,6 +110,78 @@ const ChartCard = ({ title, hint, children, className = '' }) => (
   </div>
 );
 
+/* The Manage / Deactivate pair renders twice - in the md+ table row and in the
+   phone card - so it lives here rather than being written out in both.
+   `stacked` is the card variant, where the buttons split the card width and get
+   a taller tap target. */
+const CompanyActions = ({
+  company,
+  lockedOff,
+  busy,
+  confirming,
+  onManage,
+  onToggle,
+  onAskConfirm,
+  onCancelConfirm,
+  stacked = false,
+}) => {
+  const grow = stacked ? 'flex-1 justify-center py-2' : '';
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onManage}
+        title={`Open company management for ${company.name}`}
+        className={`flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 ${grow}`}
+      >
+        <FiEdit2 className="h-3.5 w-3.5" />
+        Manage
+      </button>
+
+      {confirming ? (
+        <>
+          <button
+            type="button"
+            onClick={onToggle}
+            disabled={busy}
+            className={`rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-amber-700 disabled:opacity-60 ${grow}`}
+          >
+            {busy ? 'Working…' : 'Confirm'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancelConfirm}
+            className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50"
+          >
+            No
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={company.status === 'active' ? onAskConfirm : onToggle}
+          disabled={busy || lockedOff}
+          title={lockedOff
+            ? 'You cannot deactivate the company your own account belongs to'
+            : company.status === 'active' ? `Deactivate ${company.name}` : `Activate ${company.name}`}
+          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            company.status === 'active'
+              ? 'border-amber-200 bg-white text-amber-700 hover:bg-amber-50'
+              : 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+          } ${grow}`}
+        >
+          {busy
+            ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            : <FiPower className="h-3.5 w-3.5" />}
+          {company.status === 'active' ? 'Deactivate' : 'Activate'}
+        </button>
+      )}
+    </>
+  );
+};
+
+
 /* ------------------------------------------------------- Main screen */
 
 const SuperAdminDashboard = () => {
@@ -596,7 +668,106 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Phone: one card per company. Seven columns need 62rem, so on a phone
+            the table scrolled sideways and the pinned Actions column covered the
+            company name. Below md the same fields stack instead. */}
+        <div className="divide-y divide-slate-100 md:hidden">
+          {visible.map((c) => {
+            const isOwn = ownCompany?.id === c.id;
+            const lockedOff = isOwn && c.status === 'active';
+
+            return (
+              <div key={c.id} className="p-4">
+                <div className="flex items-start gap-3">
+                  <CompanyMark company={c} size="h-10 w-10" />
+                  <div className="min-w-0 flex-1">
+                    {/* break-words, not truncate: the card has room to wrap the
+                        whole name, and clipping it was the original complaint. */}
+                    <p className="break-words text-sm font-semibold text-slate-900">{c.name}</p>
+                    {isOwn && (
+                      <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-700">
+                        Yours
+                      </span>
+                    )}
+                    <p className="mt-0.5 break-all text-xs text-slate-400">{c.email || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <StatusPill status={c.status} />
+                  <span className="text-[11px] text-slate-400">Since {formatDate(c.created_at)}</span>
+                </div>
+
+                <p className="mt-3 text-xs font-semibold text-slate-900">{c.employees} employees</p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {c.users} users · {c.shifts} shift{c.shifts === 1 ? '' : 's'}
+                </p>
+
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-slate-700">Face coverage</span>
+                      <span className="text-[11px] text-slate-400">
+                        {c.faces_registered}/{c.employees} · {c.face_coverage}%
+                      </span>
+                    </div>
+                    <div className="mt-1.5">
+                      <Meter
+                        value={c.face_coverage}
+                        tone={c.face_coverage >= 80 ? 'bg-emerald-500' : c.face_coverage >= 40 ? 'bg-amber-500' : 'bg-rose-500'}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-slate-700">Today</span>
+                      <span className="text-[11px] text-slate-400">
+                        {c.present_today}/{c.employees} · {c.attendance_rate}%
+                      </span>
+                    </div>
+                    <div className="mt-1.5">
+                      <Meter value={c.attendance_rate} tone="bg-indigo-500" />
+                    </div>
+                    {c.late_today > 0 && (
+                      <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-amber-600">
+                        <FiClock className="h-3 w-3" /> {c.late_today} late
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <p className="mt-3 text-[11px] text-slate-400">
+                  Last punch {formatDateTime(c.last_punch_at)}
+                </p>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <CompanyActions
+                    company={c}
+                    lockedOff={lockedOff}
+                    busy={busyId === c.id}
+                    confirming={confirmId === c.id}
+                    onManage={() => navigate('/company-register')}
+                    onToggle={() => toggleStatus(c)}
+                    onAskConfirm={() => setConfirmId(c.id)}
+                    onCancelConfirm={() => setConfirmId(null)}
+                    stacked
+                  />
+                </div>
+              </div>
+            );
+          })}
+
+          {visible.length === 0 && (
+            <div className="px-5 py-14 text-center">
+              <p className="text-sm font-semibold text-slate-900">No companies match these filters</p>
+              <p className="mt-1 text-sm text-slate-500">Clear the search or switch the status filter.</p>
+            </div>
+          )}
+        </div>
+
+        {/* md and up: the full table, where the seven columns actually fit */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[62rem] text-left text-sm">
             <thead>
               <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -683,54 +854,16 @@ const SuperAdminDashboard = () => {
 
                     <td className="sticky right-0 whitespace-nowrap bg-white px-5 py-4 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.12)] transition-colors group-hover:bg-slate-50">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => navigate('/company-register')}
-                          title={`Open company management for ${c.name}`}
-                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                        >
-                          <FiEdit2 className="h-3.5 w-3.5" />
-                          Manage
-                        </button>
-
-                        {confirmId === c.id ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => toggleStatus(c)}
-                              disabled={busyId === c.id}
-                              className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-amber-700 disabled:opacity-60"
-                            >
-                              {busyId === c.id ? 'Working…' : 'Confirm'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmId(null)}
-                              className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50"
-                            >
-                              No
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => (c.status === 'active' ? setConfirmId(c.id) : toggleStatus(c))}
-                            disabled={busyId === c.id || lockedOff}
-                            title={lockedOff
-                              ? 'You cannot deactivate the company your own account belongs to'
-                              : c.status === 'active' ? `Deactivate ${c.name}` : `Activate ${c.name}`}
-                            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                              c.status === 'active'
-                                ? 'border-amber-200 bg-white text-amber-700 hover:bg-amber-50'
-                                : 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
-                            }`}
-                          >
-                            {busyId === c.id
-                              ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              : <FiPower className="h-3.5 w-3.5" />}
-                            {c.status === 'active' ? 'Deactivate' : 'Activate'}
-                          </button>
-                        )}
+                        <CompanyActions
+                          company={c}
+                          lockedOff={lockedOff}
+                          busy={busyId === c.id}
+                          confirming={confirmId === c.id}
+                          onManage={() => navigate('/company-register')}
+                          onToggle={() => toggleStatus(c)}
+                          onAskConfirm={() => setConfirmId(c.id)}
+                          onCancelConfirm={() => setConfirmId(null)}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -749,7 +882,7 @@ const SuperAdminDashboard = () => {
           </table>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4">
+        <div className="flex flex-col gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <p className="text-xs text-slate-400">
             Attendance and enrolment figures are live across every workspace.
           </p>
