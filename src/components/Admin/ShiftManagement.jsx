@@ -174,12 +174,14 @@ const ShiftManagement = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Shift Management</h1>
+    // pt-20 below lg clears the fixed sidebar hamburger, which floats over the
+    // top-left corner of every page on phone and tablet widths.
+    <div className="container mx-auto px-4 pb-8 pt-20 lg:pt-8">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">Shift Management</h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition duration-200"
+          className="flex w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2.5 text-white transition duration-200 hover:bg-blue-700 sm:w-auto sm:py-2"
         >
           <FaPlus /> Add Shift
         </button>

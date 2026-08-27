@@ -431,18 +431,18 @@ const EmployeeManagement = () => {
     <div style={S.page}>
       <style>{CSS}</style>
 
-      <div style={S.container}>
+      <div style={S.container} className="emp-container">
 
         {/* ─── CONTROL BAR ─── */}
-        <div style={S.controlBar}>
+        <div style={S.controlBar} className="control-bar">
 
           {/* Left: Title + Search */}
-          <div style={S.controlLeft}>
-            <div style={S.titleBlock}>
+          <div style={S.controlLeft} className="control-left">
+            <div style={S.titleBlock} className="title-block">
               <div style={S.titleIconWrap}>
                 <FaUsers size={18} color="#1e40af" />
               </div>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <h1 style={S.pageTitle}>Employee Management</h1>
                 <span style={S.pageSub}>
                   <span style={S.countHighlight}>{filtered.length}</span>
@@ -451,7 +451,7 @@ const EmployeeManagement = () => {
               </div>
             </div>
 
-            <div style={S.searchWrap}>
+            <div style={S.searchWrap} className="search-wrap">
               <FaSearch size={14} color="#94a3b8" style={S.searchIcon} />
               <input
                 type="text"
@@ -473,7 +473,67 @@ const EmployeeManagement = () => {
 
         {/* ─── TABLE ─── */}
         <div style={S.tableCard}>
-          <div style={S.tableScroll}>
+          {/* Phone: a card per employee. The table needs 720px, so on a phone it
+              scrolled sideways and Shift / Face Reg / Actions sat off-screen. */}
+          <div className="emp-cards">
+            {filtered.length === 0 ? (
+              <div style={{ ...S.emptyBox, padding: '48px 20px' }}>
+                <div style={S.emptyIconWrap}>
+                  <FaUsers size={28} color="#cbd5e1" />
+                </div>
+                <p style={S.emptyText}>No employees found</p>
+                <p style={S.emptySubText}>
+                  {search ? 'Try a different search term' : 'Click "Add Employee" to get started'}
+                </p>
+              </div>
+            ) : (
+              filtered.map((emp) => {
+                const [bg1, bg2] = getAvatarColor(emp.name);
+                const face = hasFaceDescriptors(emp);
+                return (
+                  <div key={emp.id} style={S.empCard}>
+                    <div style={S.empCardTop}>
+                      <div style={{ ...S.avatar, background: `linear-gradient(135deg, ${bg1}, ${bg2})` }}>
+                        {getInitials(emp.name)}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={S.empName}>{emp.name}</div>
+                        <div style={S.empPosition}>{emp.position || 'No position set'}</div>
+                        {/* wraps instead of being clipped - the whole address matters */}
+                        <div style={S.empCardEmail}>{emp.email}</div>
+                      </div>
+                    </div>
+
+                    <div style={S.empCardMeta}>
+                      {emp.shift ? (
+                        <span style={S.shiftBadge}>{emp.shift.shift_name}</span>
+                      ) : (
+                        <span style={S.shiftEmpty}>No shift</span>
+                      )}
+                      <span style={{ ...S.facePill, ...(face ? S.facePillYes : S.facePillNo) }}>
+                        <span style={S.faceDot(face)}></span>
+                        {face ? 'Registered' : 'Not Registered'}
+                      </span>
+                    </div>
+
+                    <div style={S.empCardActions}>
+                      <button onClick={() => setSelectedEmployee(emp)} style={S.cardActionBtn} className="action-btn action-view">
+                        <FaEye size={13} /> View
+                      </button>
+                      <button onClick={() => setEditingEmployee(emp)} style={S.cardActionBtn} className="action-btn action-edit">
+                        <FaEdit size={13} /> Edit
+                      </button>
+                      <button onClick={() => setDeleteConfirm(emp.id)} style={S.cardActionBtn} className="action-btn action-delete">
+                        <FaTrash size={13} /> Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div style={S.tableScroll} className="emp-table-scroll">
             <table style={S.table}>
               <thead>
                 <tr>
@@ -1013,6 +1073,47 @@ const S = {
     transition: 'all 0.18s',
   },
 
+  // ─── PHONE CARD LIST (shown under 768px by the media query in CSS) ───
+  empCard: {
+    padding: '14px 16px',
+    borderBottom: '1px solid #f1f5f9',
+  },
+  empCardTop: { display: 'flex', alignItems: 'flex-start', gap: 12 },
+  empCardEmail: {
+    fontSize: 12.5,
+    color: '#475569',
+    marginTop: 5,
+    wordBreak: 'break-word',
+  },
+  empCardMeta: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  empCardActions: {
+    display: 'flex',
+    gap: 8,
+    marginTop: 12,
+  },
+  cardActionBtn: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 36,
+    borderRadius: 8,
+    border: '1px solid #eef2f7',
+    background: '#fafbfc',
+    cursor: 'pointer',
+    color: '#64748b',
+    fontSize: 12.5,
+    fontWeight: 600,
+    transition: 'all 0.18s',
+  },
+
   // Empty
   emptyCell: { padding: '64px 20px', textAlign: 'center' },
   emptyBox: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 },
@@ -1335,4 +1436,37 @@ const CSS = `
   .modal-overlay { animation: fadeIn 0.18s ease; }
   .anim-modal { animation: modalIn 0.22s cubic-bezier(.4,0,.2,1); }
   * { box-sizing: border-box; }
+
+  /* The layout above is inline-styled, which cannot express a breakpoint, so
+     the responsive rules live here. Under 768px the table is swapped for the
+     card list; the control bar stacks so the Add button stops covering the
+     title. */
+  .emp-cards { display: none; }
+
+  /* The sidebar hamburger is fixed at the top-left and hidden only from 1024px,
+     so every width below that needs room for it. */
+  @media (max-width: 1023px) {
+    .emp-container { padding: 72px 20px 40px !important; }
+  }
+
+  @media (max-width: 767px) {
+    .emp-cards { display: block; }
+    .emp-table-scroll { display: none; }
+    .emp-container { padding: 72px 14px 40px !important; }
+
+    .control-bar {
+      flex-direction: column;
+      align-items: stretch !important;
+      gap: 14px !important;
+      padding: 16px !important;
+    }
+    .control-left {
+      flex-direction: column;
+      align-items: stretch !important;
+      gap: 14px !important;
+    }
+    .title-block { flex-shrink: 1 !important; min-width: 0; }
+    .search-wrap { max-width: none !important; }
+    .add-btn { width: 100%; justify-content: center; padding: 11px 20px !important; }
+  }
 `;
