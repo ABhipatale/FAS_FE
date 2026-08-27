@@ -1168,7 +1168,7 @@ export default function EnhancedDashboard() {
   // console.log("Dashboard mounted");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ffffff] to-[#ddddff]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-[#ffffff] to-[#ddddff]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -1205,7 +1205,7 @@ export default function EnhancedDashboard() {
         className="bg-[#6366F1] border-b border-gray-200 shadow-sm sticky top-0 z-40"
         style={{ fontFamily: 'Arial, sans-serif' }}
       >
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 bg-[#03103b]">
+        <div className="mx-auto w-full max-w-7xl bg-[#03103b] px-3 py-2 sm:px-4 lg:px-6">
           {/* <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[5.2vw] lg:text-[2vw] font-extrabold mb-6  text-[#ffffff] ">Attendance Dashboard</h1>
@@ -1226,41 +1226,42 @@ export default function EnhancedDashboard() {
               </div>
             </div>
           </div> */}
-          <div className="max-w-7xl mx-auto px-4 py-2 bg-[#03103b]">
-  <div className="flex items-center justify-between">
+          {/* pl-12 clears the fixed hamburger button, which only renders below lg.
+              No container in this row may use whitespace-nowrap: it gives the row a
+              minimum width wider than a phone viewport, which widens the whole page. */}
+          <div className="flex flex-col gap-1 pl-12 sm:flex-row sm:items-center sm:justify-between sm:gap-3 lg:pl-0">
 
-    {/* Left */}
-    <p className="text-sm font-medium text-white whitespace-nowrap ml-5 sm:ml-0">
-      Welcome {user?.name || "Admin"}!
-    </p>
+            {/* Left */}
+            <p className="min-w-0 truncate text-sm font-medium text-white">
+              Welcome {user?.name || "Admin"}!
+            </p>
 
-    {/* Right */}
-    <div className="flex items-center gap-4 text-xs whitespace-nowrap">
+            {/* Right */}
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:flex-nowrap sm:gap-x-3">
 
-      <span className="bg-gray-200 text-gray-800 px-3 py-0.5 rounded-md font-medium">
-        {new Date().toLocaleDateString("en-US", { weekday: "long" })}
-      </span>
+              <span className="whitespace-nowrap rounded-md bg-gray-200 px-2 py-0.5 font-medium text-gray-800 sm:px-3">
+                {new Date().toLocaleDateString("en-US", { weekday: "long" })}
+              </span>
 
-      <span className="text-gray-100 font-semibold">
-        {new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        })}
-      </span>
+              <span className="whitespace-nowrap font-semibold text-gray-100">
+                {new Date().toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                })}
+              </span>
 
-      <span className="text-gray-300">
-        {new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}
-      </span>
+              <span className="whitespace-nowrap text-gray-300">
+                {new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
 
-    </div>
-  </div>
-</div>
+            </div>
+          </div>
         </div>
       </motion.div>
 
